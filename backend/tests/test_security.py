@@ -104,8 +104,19 @@ async def test_all_api_routes_require_authentication():
     transport = ASGITransport(app=app)
     api_routes: list[tuple[str, str]] = []
 
-    for route in app.routes:
-        if isinstance(route, APIRoute) and route.path.startswith("/api/"):
+    def _collect_routes(route_list):
+        collected = []
+        for r in route_list:
+            if isinstance(r, APIRoute):
+                collected.append(r)
+            elif hasattr(r, "original_router") and hasattr(r.original_router, "routes"):
+                collected.extend(_collect_routes(r.original_router.routes))
+            elif hasattr(r, "routes"):
+                collected.extend(_collect_routes(r.routes))
+        return collected
+
+    for route in _collect_routes(app.routes):
+        if route.path.startswith("/api/"):
             # /api/auth/login is the public application login endpoint (Phase E)
             if route.path == "/api/auth/login":
                 continue

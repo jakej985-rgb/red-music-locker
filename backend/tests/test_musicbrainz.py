@@ -77,7 +77,7 @@ async def test_search_structured(mb_client):
 async def test_api_musicbrainz_endpoint():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        with patch("ytm_service.main.musicbrainz_client.search", new_callable=AsyncMock) as mock_search:
+        with patch("ytm_service.routers.recovery.musicbrainz_client.search", new_callable=AsyncMock) as mock_search:
             from ytm_service.models import MusicBrainzMatch
             mock_search.return_value = [
                 MusicBrainzMatch(

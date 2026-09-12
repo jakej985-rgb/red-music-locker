@@ -12,7 +12,9 @@ async def temp_db(tmp_path):
     db_file = tmp_path / "test_uploads.db"
     db_instance = Database(db_file)
     await db_instance.init_db()
-    with patch("ytm_service.main.db", db_instance):
+    with patch("ytm_service.routers.ytm.db", db_instance), \
+         patch("ytm_service.routers.library.db", db_instance), \
+         patch("ytm_service.routers.sync.db", db_instance):
         yield db_instance
 
 @pytest.mark.asyncio
@@ -103,11 +105,11 @@ async def test_replace_ytm_upload_endpoint(temp_db, tmp_path):
     dummy_file = tmp_path / "dummy_audio.mp3"
     dummy_file.write_bytes(b"dummy audio content")
 
-    with patch("ytm_service.main.download_ytm_upload", AsyncMock(return_value=dummy_file)), \
-         patch("ytm_service.main.write_metadata_tags") as mock_tag, \
-         patch("ytm_service.main.ytm_client.upload_file", AsyncMock(return_value={"success": True, "response": "STATUS_SUCCEEDED"})), \
-         patch("ytm_service.main.ytm_client.delete_upload", AsyncMock(return_value={"success": True})), \
-         patch("ytm_service.main.ytm_client.fetch_and_cache_uploads", AsyncMock()):
+    with patch("ytm_service.routers.ytm.download_ytm_upload", AsyncMock(return_value=dummy_file)), \
+         patch("ytm_service.routers.ytm.write_metadata_tags") as mock_tag, \
+         patch("ytm_service.routers.ytm.ytm_client.upload_file", AsyncMock(return_value={"success": True, "response": "STATUS_SUCCEEDED"})), \
+         patch("ytm_service.routers.ytm.ytm_client.delete_upload", AsyncMock(return_value={"success": True})), \
+         patch("ytm_service.routers.ytm.ytm_client.fetch_and_cache_uploads", AsyncMock()):
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -147,11 +149,11 @@ async def test_replace_ytm_upload_still_missing_artwork(temp_db, tmp_path):
     dummy_file = tmp_path / "dummy_audio2.mp3"
     dummy_file.write_bytes(b"dummy audio content")
 
-    with patch("ytm_service.main.download_ytm_upload", AsyncMock(return_value=dummy_file)), \
-         patch("ytm_service.main.write_metadata_tags"), \
-         patch("ytm_service.main.ytm_client.upload_file", AsyncMock(return_value={"success": True, "response": "STATUS_SUCCEEDED"})), \
-         patch("ytm_service.main.ytm_client.delete_upload", AsyncMock(return_value={"success": True})), \
-         patch("ytm_service.main.ytm_client.fetch_and_cache_uploads", AsyncMock()):
+    with patch("ytm_service.routers.ytm.download_ytm_upload", AsyncMock(return_value=dummy_file)), \
+         patch("ytm_service.routers.ytm.write_metadata_tags"), \
+         patch("ytm_service.routers.ytm.ytm_client.upload_file", AsyncMock(return_value={"success": True, "response": "STATUS_SUCCEEDED"})), \
+         patch("ytm_service.routers.ytm.ytm_client.delete_upload", AsyncMock(return_value={"success": True})), \
+         patch("ytm_service.routers.ytm.ytm_client.fetch_and_cache_uploads", AsyncMock()):
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -186,7 +188,7 @@ async def test_delete_ytm_upload_endpoint(temp_db):
         "album": None
     })
 
-    with patch("ytm_service.main.ytm_client.delete_upload", AsyncMock(return_value={"success": True})):
+    with patch("ytm_service.routers.ytm.ytm_client.delete_upload", AsyncMock(return_value={"success": True})):
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             resp = await client.delete("/api/ytm/uploads/ent_delete_me")
@@ -200,7 +202,7 @@ async def test_batch_delete_ytm_uploads_endpoint(temp_db):
     await temp_db.upsert_ytm_upload({"entity_id": "ent_batch_1", "video_id": "vid_b1", "title": "B1"})
     await temp_db.upsert_ytm_upload({"entity_id": "ent_batch_2", "video_id": "vid_b2", "title": "B2"})
 
-    with patch("ytm_service.main.ytm_client.delete_upload", AsyncMock(return_value={"success": True})):
+    with patch("ytm_service.routers.ytm.ytm_client.delete_upload", AsyncMock(return_value={"success": True})):
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             resp = await client.post(
@@ -232,7 +234,7 @@ async def test_batch_upload_songs_endpoint(temp_db):
         "modified_time": 100.0
     })
 
-    with patch("ytm_service.main.queue_manager.enqueue_song", AsyncMock(return_value=123)):
+    with patch("ytm_service.routers.sync.queue_manager.enqueue_song", AsyncMock(return_value=123)):
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             resp = await client.post(

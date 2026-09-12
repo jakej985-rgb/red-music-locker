@@ -146,7 +146,7 @@ async def test_read_only_metadata_update_handling(tmp_path):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         # Mock os.access to return False (simulating :ro mount)
-        with patch("ytm_service.main.os.access", return_value=False), \
+        with patch("ytm_service.routers.library.os.access", return_value=False), \
              patch.object(metadata_tracker, "log_change") as mock_log:
 
             res = await ac.post(

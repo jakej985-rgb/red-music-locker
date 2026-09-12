@@ -409,10 +409,10 @@ async def test_api_replicated_playlists_crud(temp_db):
     client = TestClient(app)
     auth_headers = {"Authorization": f"Bearer {settings.api_key}"}
 
-    with patch("ytm_service.main.db", temp_db), \
+    with patch("ytm_service.routers.playlists.db", temp_db), \
          patch("ytm_service.playlist_replicator.db", temp_db), \
-         patch("ytm_service.main.ytm_client.get_playlist_details", new_callable=AsyncMock) as mock_details, \
-         patch("ytm_service.main.playlist_replicator.reconcile_playlist", new_callable=AsyncMock) as mock_reconcile:
+         patch("ytm_service.routers.ytm.ytm_client.get_playlist_details", new_callable=AsyncMock) as mock_details, \
+         patch("ytm_service.routers.playlists.playlist_replicator.reconcile_playlist", new_callable=AsyncMock) as mock_reconcile:
 
         mock_details.return_value = {"title": "406 Lyricists"}
         mock_reconcile.return_value = {

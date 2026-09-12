@@ -294,7 +294,7 @@ async def test_legacy_developer_setup_retained():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         mock_result = {"connected": True, "message": "OK", "user_name": "Dev User"}
-        with patch("ytm_service.main.ytm_client.setup_auth", new=AsyncMock(return_value=mock_result)):
+        with patch("ytm_service.routers.auth.ytm_client.setup_auth", new=AsyncMock(return_value=mock_result)):
             resp = await ac.post("/api/auth/setup", json={"raw_headers": "Cookie: manual=1"})
             assert resp.status_code == 200
             data = resp.json()
@@ -308,7 +308,7 @@ async def test_auth_status_and_test_endpoints():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         mock_status = {"connected": True, "message": "All good", "user_name": "Status User"}
-        with patch("ytm_service.main.ytm_client.test_connection", new=AsyncMock(return_value=mock_status)):
+        with patch("ytm_service.routers.auth.ytm_client.test_connection", new=AsyncMock(return_value=mock_status)):
             status_resp = await ac.get("/api/auth/status")
             assert status_resp.status_code == 200
             assert status_resp.json()["connected"] is True

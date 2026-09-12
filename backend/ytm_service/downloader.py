@@ -21,7 +21,7 @@ import hashlib
 from pathlib import Path
 from typing import Optional, Union, Dict, Any, Tuple
 from .config import settings
-from .security import validate_youtube_url, validate_fs_path
+from .security import validate_youtube_url, validate_fs_path, validate_url_at_execution
 from .database import db
 
 logger = logging.getLogger("ytm_sync.downloader")
@@ -359,6 +359,9 @@ def _download_sync(
                 cmd.append(target_url)
 
                 logger.info(f"Downloading audio via {target_url} (clients={mode['clients']}, cookies={mode['use_cookies']})...")
+                # Re-validate DNS resolution immediately before execution to narrow
+                # the DNS rebinding TOCTOU window (defense-in-depth)
+                validate_url_at_execution(target_url)
                 res = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=120)
 
                 if res.returncode == 0:
@@ -744,6 +747,8 @@ def extract_playlist_info_sync(playlist_url_or_id: str) -> dict:
         if cookie_file:
             cmd.extend(["--cookies", cookie_file])
 
+        # Re-validate DNS resolution immediately before execution (defense-in-depth)
+        validate_url_at_execution(url)
         res = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=60)
         if res.returncode != 0:
             raise RuntimeError(f"Failed to fetch playlist info: {res.stderr[:200] or 'Unknown error'}")

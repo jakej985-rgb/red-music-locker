@@ -73,10 +73,11 @@ limiter = RateLimiter()
 
 
 def get_client_ip(request: Request) -> str:
-    """Extract client IP respecting reverse proxy headers."""
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    """Extract client IP from the request.
+    Relies on uvicorn's proxy_headers + forwarded_allow_ips settings to resolve
+    trusted X-Forwarded-For headers, rather than manually parsing the header
+    which could be spoofed to bypass rate limits.
+    """
     return request.client.host if request.client else "127.0.0.1"
 
 

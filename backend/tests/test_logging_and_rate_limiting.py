@@ -122,29 +122,29 @@ async def test_auth_start_rate_limiting():
 @pytest.mark.asyncio
 async def test_rate_limiting_isolated_per_ip():
     """Requests from different IPs get independent rate limit windows."""
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+    t1 = ASGITransport(app=app, client=("192.168.1.50", 12345))
+    t2 = ASGITransport(app=app, client=("192.168.1.51", 12345))
+    async with AsyncClient(transport=t1, base_url="http://test") as ac1, \
+               AsyncClient(transport=t2, base_url="http://test") as ac2:
         # IP 1 consumes all 5 login attempts
         for _ in range(5):
-            r = await ac.post(
+            r = await ac1.post(
                 "/api/auth/login",
-                json={"username": "admin", "password": "wrongpassword"},
-                headers={"X-Forwarded-For": "192.168.1.50"}
+                json={"username": "admin", "password": "wrongpassword"}
             )
             assert r.status_code == 401
 
         # IP 1 is now rate limited
-        r1_limited = await ac.post(
+        r1_limited = await ac1.post(
             "/api/auth/login",
-            json={"username": "admin", "password": "wrongpassword"},
-            headers={"X-Forwarded-For": "192.168.1.50"}
+            json={"username": "admin", "password": "wrongpassword"}
         )
         assert r1_limited.status_code == 429
 
         # IP 2 can still make requests
-        r2 = await ac.post(
+        r2 = await ac2.post(
             "/api/auth/login",
-            json={"username": "admin", "password": "wrongpassword"},
-            headers={"X-Forwarded-For": "192.168.1.51"}
+            json={"username": "admin", "password": "wrongpassword"}
         )
         assert r2.status_code == 401
+

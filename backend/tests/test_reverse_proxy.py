@@ -76,10 +76,12 @@ async def test_reverse_proxy_cors_preflight():
 
 @pytest.mark.asyncio
 async def test_reverse_proxy_traefik_client_ip_forwarding():
-    """Client IP extraction properly prioritizes the first entry in X-Forwarded-For."""
+    """get_client_ip uses request.client.host (resolved by uvicorn proxy_headers),
+    not raw X-Forwarded-For header which is spoofable."""
     from ytm_service.rate_limiter import get_client_ip
     from starlette.requests import Request
 
+    # Without client info, falls back to 127.0.0.1
     scope = {
         "type": "http",
         "method": "GET",
@@ -90,4 +92,19 @@ async def test_reverse_proxy_traefik_client_ip_forwarding():
     }
     req = Request(scope)
     ip = get_client_ip(req)
-    assert ip == "198.51.100.42"
+    # X-Forwarded-For should NOT be used directly (it's spoofable)
+    # Without request.client, fallback to 127.0.0.1
+    assert ip == "127.0.0.1"
+
+    # With client info set (as uvicorn would), uses that
+    scope_with_client = {
+        "type": "http",
+        "method": "GET",
+        "path": "/",
+        "headers": [],
+        "client": ("10.0.0.5", 12345),
+    }
+    req2 = Request(scope_with_client)
+    ip2 = get_client_ip(req2)
+    assert ip2 == "10.0.0.5"
+

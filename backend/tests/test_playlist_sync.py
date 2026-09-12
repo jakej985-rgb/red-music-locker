@@ -14,7 +14,7 @@ async def temp_db(tmp_path):
     db_file = tmp_path / "test_pl.db"
     db_instance = Database(db_file)
     await db_instance.init_db()
-    with patch("ytm_service.main.db", db_instance), \
+    with patch("ytm_service.routers.ytm.db", db_instance), \
          patch("ytm_service.playlist_downloader.db", db_instance):
         yield db_instance
 
@@ -65,8 +65,8 @@ async def test_download_and_upload_playlist_track(temp_db, tmp_path):
 
 @pytest.mark.asyncio
 async def test_playlist_sync_endpoints(temp_db, tmp_path):
-    with patch("ytm_service.main.ytm_client.is_auth_configured", return_value=True), \
-         patch("ytm_service.main.ytm_client.get_playlist_details", AsyncMock(return_value={
+    with patch("ytm_service.routers.ytm.ytm_client.is_auth_configured", return_value=True), \
+         patch("ytm_service.routers.ytm.ytm_client.get_playlist_details", AsyncMock(return_value={
              "id": "PL123",
              "title": "My Test Playlist",
              "tracks": [
@@ -86,7 +86,7 @@ async def test_playlist_sync_endpoints(temp_db, tmp_path):
                  }
              ]
          })), \
-         patch("ytm_service.main.playlist_sync_manager.start_sync") as mock_start_sync:
+         patch("ytm_service.routers.ytm.playlist_sync_manager.start_sync") as mock_start_sync:
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -109,7 +109,7 @@ async def test_download_track_endpoint(temp_db, tmp_path):
     dummy_file = tmp_path / "track_dl.mp3"
     dummy_file.write_bytes(b"dummy")
 
-    with patch("ytm_service.main.ytm_client.is_auth_configured", return_value=True), \
+    with patch("ytm_service.routers.ytm.ytm_client.is_auth_configured", return_value=True), \
          patch("ytm_service.playlist_downloader._download_sync", return_value=dummy_file), \
          patch("ytm_service.playlist_downloader.write_metadata_tags"), \
          patch("ytm_service.playlist_downloader.ytm_client.upload_file", AsyncMock(return_value={"success": True, "response": "STATUS_SUCCEEDED"})), \
@@ -134,7 +134,7 @@ async def test_download_track_endpoint(temp_db, tmp_path):
 
 @pytest.mark.asyncio
 async def test_import_playlist_url_endpoint(temp_db):
-    with patch("ytm_service.main.extract_playlist_info", AsyncMock(return_value={
+    with patch("ytm_service.routers.ytm.extract_playlist_info", AsyncMock(return_value={
         "id": "ext_pl_1",
         "title": "Imported Playlist",
         "description": "Public hits",

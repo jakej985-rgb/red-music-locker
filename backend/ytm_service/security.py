@@ -118,10 +118,32 @@ def validate_fs_path(
     return resolved
 
 
-def validate_network_url(url: str, allowed_hosts: Optional[set[str]] = None) -> None:
+def _check_ip_safety(hostname: str, ip_str: str) -> None:
+    """Check a single resolved IP address against SSRF blocklists."""
+    try:
+        ip = ipaddress.ip_address(ip_str)
+    except ValueError:
+        raise ValueError(f"Invalid IP address returned for host: {ip_str}")
+
+    if ip.is_loopback:
+        raise ValueError(f"SSRF protection: '{hostname}' resolved to loopback IP {ip_str}")
+    if ip.is_link_local:
+        raise ValueError(f"SSRF protection: '{hostname}' resolved to link-local IP {ip_str}")
+    if ip.is_unspecified:
+        raise ValueError(f"SSRF protection: '{hostname}' resolved to unspecified IP {ip_str}")
+    if ip.is_reserved:
+        raise ValueError(f"SSRF protection: '{hostname}' resolved to reserved IP {ip_str}")
+    if ip.is_multicast:
+        raise ValueError(f"SSRF protection: '{hostname}' resolved to multicast IP {ip_str}")
+    if ip.is_private:
+        raise ValueError(f"SSRF protection: '{hostname}' resolved to private IP {ip_str}")
+
+
+def validate_network_url(url: str, allowed_hosts: Optional[set[str]] = None) -> list[str]:
     """
     Validate that a URL is well-formed, uses http/https, contains no userinfo/bad ports,
     matches allowed_hosts if specified, and resolves only to public non-internal IP addresses.
+    Returns the list of resolved IP address strings for downstream pinning.
     Raises ValueError on any violation.
     """
     if not url or not isinstance(url, str):
@@ -161,30 +183,50 @@ def validate_network_url(url: str, allowed_hosts: Optional[set[str]] = None) -> 
     except socket.gaierror as e:
         raise ValueError(f"Failed to resolve domain '{hostname}': {e}")
 
+    resolved_ips: list[str] = []
     for entry in addr_info:
         ip_str = entry[4][0]
-        try:
-            ip = ipaddress.ip_address(ip_str)
-        except ValueError:
-            raise ValueError(f"Invalid IP address returned for host: {ip_str}")
+        _check_ip_safety(hostname, ip_str)
+        resolved_ips.append(ip_str)
 
-        if ip.is_loopback:
-            raise ValueError(f"SSRF protection: '{hostname}' resolved to loopback IP {ip_str}")
-        if ip.is_link_local:
-            raise ValueError(f"SSRF protection: '{hostname}' resolved to link-local IP {ip_str}")
-        if ip.is_unspecified:
-            raise ValueError(f"SSRF protection: '{hostname}' resolved to unspecified IP {ip_str}")
-        if ip.is_reserved:
-            raise ValueError(f"SSRF protection: '{hostname}' resolved to reserved IP {ip_str}")
-        if ip.is_multicast:
-            raise ValueError(f"SSRF protection: '{hostname}' resolved to multicast IP {ip_str}")
-        if ip.is_private:
-            raise ValueError(f"SSRF protection: '{hostname}' resolved to private IP {ip_str}")
+    return resolved_ips
 
 
-def validate_youtube_url(url: str) -> None:
-    """Validate that a URL is a legitimate YouTube or YouTube Music URL."""
-    validate_network_url(url, allowed_hosts=ALLOWED_YOUTUBE_HOSTS)
+def validate_youtube_url(url: str) -> list[str]:
+    """Validate that a URL is a legitimate YouTube or YouTube Music URL.
+    Returns the list of resolved IP addresses."""
+    return validate_network_url(url, allowed_hosts=ALLOWED_YOUTUBE_HOSTS)
+
+
+def validate_url_at_execution(url: str, allowed_hosts: Optional[set[str]] = None) -> None:
+    """
+    Re-validate a URL's DNS resolution immediately before execution to narrow
+    the DNS rebinding TOCTOU window. This performs a fresh DNS lookup and checks
+    all resolved IPs against SSRF blocklists.
+
+    Call this as close as possible to the actual network request (e.g. right
+    before subprocess.run) to minimize the race window between validation
+    and use.
+
+    Note: This does NOT fully eliminate DNS rebinding — only container-level
+    egress firewalls blocking RFC1918/link-local can do that. This is a
+    defense-in-depth measure.
+    """
+    if not url or not isinstance(url, str):
+        return  # Non-URL targets (e.g. ytsearch:) are not DNS-resolvable
+    parsed = urllib.parse.urlparse(url.strip())
+    hostname = (parsed.hostname or "").lower()
+    if not hostname:
+        return
+
+    try:
+        addr_info = socket.getaddrinfo(hostname, None)
+    except socket.gaierror:
+        return  # DNS failure will be caught by the actual request
+
+    for entry in addr_info:
+        ip_str = entry[4][0]
+        _check_ip_safety(hostname, ip_str)
 
 
 def validate_auth_origin_url(

@@ -26,7 +26,8 @@ async def gate_db(tmp_path):
          patch("ytm_service.playlist_downloader.db", test_db), \
          patch("ytm_service.matcher.db", test_db), \
          patch("ytm_service.downloader.db", test_db), \
-         patch("ytm_service.main.db", test_db):
+         patch("ytm_service.routers.sync.db", test_db), \
+         patch("ytm_service.routers.library.db", test_db):
         yield test_db
 
 

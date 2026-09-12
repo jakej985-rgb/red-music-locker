@@ -15,7 +15,7 @@ async def temp_db(tmp_path):
     db_file = tmp_path / "test_queue.db"
     db_instance = Database(db_file)
     await db_instance.init_db()
-    with patch("ytm_service.main.db", db_instance), \
+    with patch("ytm_service.routers.sync.db", db_instance), \
          patch("ytm_service.queue_service.db", db_instance):
         yield db_instance
 

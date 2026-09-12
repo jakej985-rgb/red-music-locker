@@ -32,7 +32,15 @@ async def temp_db(tmp_path):
          patch("ytm_service.playlist_downloader.db", test_db), \
          patch("ytm_service.matcher.db", test_db), \
          patch("ytm_service.downloader.db", test_db), \
-         patch("ytm_service.main.db", test_db):
+         patch("ytm_service.routers.ytm.db", test_db), \
+         patch("ytm_service.routers.sync.db", test_db), \
+         patch("ytm_service.routers.recovery.db", test_db), \
+         patch("ytm_service.routers.library.db", test_db), \
+         patch("ytm_service.routers.settings_routes.db", test_db), \
+         patch("ytm_service.routers.auth.db", test_db), \
+         patch("ytm_service.routers.users.db", test_db), \
+         patch("ytm_service.routers.family.db", test_db), \
+         patch("ytm_service.routers.playlists.db", test_db):
         yield test_db
 
 
@@ -175,9 +183,9 @@ async def test_private_upload_auth_failure_preserves_local_files_and_fails_close
     mock_delete = AsyncMock(return_value={"success": True})
     mock_upload = AsyncMock(return_value={"success": True})
 
-    with patch("ytm_service.main.download_ytm_upload", side_effect=PrivateUploadUnavailableError("private upload unavailable or auth failed (Private video. Sign in required.)")), \
-         patch("ytm_service.main.ytm_client.delete_upload", mock_delete), \
-         patch("ytm_service.main.ytm_client.upload_file", mock_upload):
+    with patch("ytm_service.routers.ytm.download_ytm_upload", side_effect=PrivateUploadUnavailableError("private upload unavailable or auth failed (Private video. Sign in required.)")), \
+         patch("ytm_service.routers.ytm.ytm_client.delete_upload", mock_delete), \
+         patch("ytm_service.routers.ytm.ytm_client.upload_file", mock_upload):
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -874,7 +882,7 @@ async def test_phase13_global_safety_switch_and_manual_confirmation(tmp_path, te
     dummy_staged = tmp_path / "staged_download.mp3"
     dummy_staged.write_bytes(b"REPLACEMENT VERIFIED DOWNLOAD FROM CLOUD")
 
-    with patch("ytm_service.main.download_upload", return_value=dummy_staged):
+    with patch("ytm_service.routers.recovery.download_upload", return_value=dummy_staged):
         async with AsyncClient(transport=transport, base_url="http://test") as ac:
             exec_ok = await ac.post(
                 "/api/files/replace/execute",
