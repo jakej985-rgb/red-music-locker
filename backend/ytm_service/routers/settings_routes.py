@@ -1,7 +1,7 @@
 """Router module for Settings & Status endpoints."""
 import logging
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 
 from ..models import (
     DashboardStats,
@@ -39,7 +39,8 @@ async def update_user_settings_post(req: UserSettingsUpdate, current_user: User 
 
 
 @router.get("/api/status", response_model=DashboardStats)
-async def get_dashboard_status(current_user: User = Depends(require_authenticated_user)):
+async def get_dashboard_status(response: Response, current_user: User = Depends(require_authenticated_user)):
+    response.headers["Cache-Control"] = "private, max-age=3, stale-while-revalidate=5"
     counts = await db.get_dashboard_counts(user_id=current_user.id)
     conn = await ytm_client.test_connection(user_id=current_user.id)
     return DashboardStats(

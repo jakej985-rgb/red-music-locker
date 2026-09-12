@@ -291,6 +291,8 @@ class CoreDbMixin:
         async with self.get_connection() as db:
             await db.execute("PRAGMA journal_mode = WAL;")
             await db.execute("PRAGMA synchronous = NORMAL;")
+            await db.execute("PRAGMA wal_autocheckpoint = 1000;")
+            await db.execute("PRAGMA cache_size = -64000;")
             await db.executescript(CREATE_TABLES_SQL)
             
             # Ensure upload identity columns exist on existing databases

@@ -133,7 +133,7 @@ def _download_via_ytmusicapi(video_id: str, output_path: Path) -> Optional[Tuple
         try:
             if raw_temp.exists():
                 raw_temp.unlink()
-        except Exception:
+        except OSError:
             pass
 
         if conv_res.returncode == 0 and final_mp3.exists() and final_mp3.stat().st_size > 0:
@@ -172,7 +172,7 @@ def verify_downloaded_upload(
         )
         try:
             staged_file.unlink()
-        except Exception:
+        except OSError:
             pass
         raise DownloadIntegrityError(
             f"Download integrity verification failed: expected video ID '{expected_source_id}', "
@@ -194,7 +194,7 @@ def verify_downloaded_upload(
                 )
                 try:
                     staged_file.unlink()
-                except Exception:
+                except OSError:
                     pass
                 raise DownloadIntegrityError(
                     f"Audio characteristic verification failed for {expected_source_id}: {ex}. Staging file destroyed."
@@ -299,7 +299,7 @@ def _download_sync(
                             user_agent = v.strip()
                 if cookie_raw:
                     break
-            except Exception as e:
+            except (OSError, json.JSONDecodeError) as e:
                 logger.warning(f"Failed to read auth file {auth_p}: {e}")
 
     cookie_file = None
@@ -414,12 +414,12 @@ def _download_sync(
         if id_file.exists():
             try:
                 id_file.unlink()
-            except Exception:
+            except OSError:
                 pass
         if cookie_file and os.path.exists(cookie_file):
             try:
                 os.remove(cookie_file)
-            except Exception:
+            except OSError:
                 pass
 
 
@@ -546,7 +546,7 @@ def commit_staged_file_to_destination(
         if backup_sha256 != orig_sha256:
             try:
                 backup_file.unlink()
-            except Exception:
+            except OSError:
                 pass
             raise RuntimeError(
                 f"Pre-replacement backup integrity mismatch: original={orig_sha256} vs backup={backup_sha256}. "
@@ -625,7 +625,7 @@ async def download_upload(
             )
             try:
                 staged_file.unlink()
-            except Exception:
+            except OSError:
                 pass
             raise
 
@@ -721,7 +721,7 @@ def extract_playlist_info_sync(playlist_url_or_id: str) -> dict:
                             user_agent = v.strip()
                 if cookie_raw:
                     break
-            except Exception as e:
+            except (OSError, json.JSONDecodeError) as e:
                 logger.warning(f"Failed to read auth file {auth_p}: {e}")
 
     cookie_file = _generate_netscape_cookies(cookie_raw) if cookie_raw else None
@@ -780,7 +780,7 @@ def extract_playlist_info_sync(playlist_url_or_id: str) -> dict:
         if cookie_file and os.path.exists(cookie_file):
             try:
                 os.remove(cookie_file)
-            except Exception:
+            except OSError:
                 pass
 
 

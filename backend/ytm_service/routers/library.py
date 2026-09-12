@@ -295,6 +295,10 @@ async def get_song_artwork(file_id: int):
         raise HTTPException(status_code=404, detail="No embedded artwork found")
     data, mime = res
     from fastapi.responses import Response
-    return Response(content=data, media_type=mime)
+    return Response(
+        content=data,
+        media_type=mime,
+        headers={"Cache-Control": "public, max-age=86400, immutable"}
+    )
 
 

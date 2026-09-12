@@ -34,9 +34,13 @@ class ApiService {
         try {
           await fetchCurrentUser();
           await fetchYtmAccount();
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('ApiService.init: Failed to fetch user or YTM account: $e');
+        }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ApiService.init: Failed to read preferences: $e');
+    }
   }
 
   Future<void> setApiKey(String? key) async {
@@ -55,7 +59,9 @@ class ApiService {
       } else {
         await prefs.setString('ytm_sync_api_key', _apiKey!);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ApiService.setApiKey: Failed to update preferences: $e');
+    }
   }
 
   Future<UserLoginResponse> login(String username, String password) async {
@@ -73,10 +79,14 @@ class ApiService {
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('ytm_sync_session_token', loginResp.token);
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('ApiService.login: Failed to save session token: $e');
+      }
       try {
         await fetchYtmAccount();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('ApiService.login: Failed to fetch YTM account: $e');
+      }
       return loginResp;
     }
     final err = jsonDecode(response.body);
@@ -90,7 +100,9 @@ class ApiService {
           Uri.parse('$baseUrl/api/auth/logout'),
           headers: _buildHeaders({'Content-Type': 'application/json'}),
         );
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('ApiService.logout: Logout endpoint request failed: $e');
+      }
     }
     _apiKey = null;
     _currentUser = null;
@@ -99,7 +111,9 @@ class ApiService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('ytm_sync_session_token');
       await prefs.remove('ytm_sync_api_key');
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ApiService.logout: Failed to clear session preferences: $e');
+    }
   }
 
   Future<User?> fetchCurrentUser() async {
@@ -110,7 +124,9 @@ class ApiService {
         _currentUser = User.fromJson(data);
         return _currentUser;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ApiService.fetchCurrentUser failed: $e');
+    }
     return null;
   }
 
@@ -122,7 +138,9 @@ class ApiService {
         _ytmAccount = YouTubeMusicAccount.fromJson(data);
         return _ytmAccount;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ApiService.fetchYtmAccount failed: $e');
+    }
     return null;
   }
 
@@ -701,7 +719,9 @@ class ApiService {
           'proper': (data['proper'] as num?)?.toInt() ?? 0,
         };
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ApiService.getYtmUploadsSummary failed: $e');
+    }
     return {'total': 0, 'missing_metadata': 0, 'proper': 0};
   }
 
@@ -767,7 +787,9 @@ class ApiService {
       if (err is Map && err['detail'] != null) {
         error = err['detail'].toString();
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ApiService.replaceYtmUpload: failed to parse error response: $e');
+    }
     return {'success': false, 'error': error};
   }
 
@@ -786,7 +808,9 @@ class ApiService {
         final data = jsonDecode(response.body);
         return data['cover_url'] as String?;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ApiService.fetchCoverArtUrl failed: $e');
+    }
     return null;
   }
 

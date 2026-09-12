@@ -176,7 +176,7 @@ class MusicDbMixin:
         album: Optional[str] = None,
         track_number: Optional[int] = None
     ) -> Optional[MusicFile]:
-        from .normalizer import compute_metadata_hash
+        from ..normalizer import compute_metadata_hash
         now = datetime.now(timezone.utc).isoformat()
 
         for attempt in range(5):
@@ -310,7 +310,7 @@ class MusicDbMixin:
 
     async def find_ytm_upload_by_title_artist(self, title: str, artist: Optional[str] = None, user_id: Optional[str] = None) -> Optional[YtmUpload]:
         """Find an existing upload matching normalized title and artist."""
-        from .normalizer import normalize_text
+        from ..normalizer import normalize_text
         clean_title = normalize_text(title)
         clean_artist = normalize_text(artist) if artist else ""
         if not clean_title:

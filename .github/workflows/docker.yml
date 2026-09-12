@@ -67,6 +67,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Lint Backend with Ruff
+        run: |
+          pip install ruff
+          ruff check backend/ytm_service
+
       - name: Run Backend Test Suite
         run: |
           pip install -r backend/requirements.txt

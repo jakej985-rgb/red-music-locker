@@ -101,7 +101,7 @@ class UserDbMixin:
                     pass
 
                 # Step 3: Verify connection
-                from .ytm_client import ytm_client
+                from ..ytm_client import ytm_client
                 conn_test = await ytm_client.test_connection(user_id=admin_id)
                 
                 if conn_test.get("connected"):
