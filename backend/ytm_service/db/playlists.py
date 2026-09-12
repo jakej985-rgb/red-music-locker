@@ -200,8 +200,51 @@ class PlaylistDbMixin:
                 (replicated_playlist_id, revision, len(tracks), tracks_json)
             )
             row = await cursor.fetchone()
+            snapshot_id = row["id"]
+            # Keep only the latest 10 snapshots per replicated playlist to prevent DB bloat
+            await db.execute(
+                """
+                DELETE FROM replicated_playlist_snapshots
+                WHERE replicated_playlist_id = ?
+                  AND id NOT IN (
+                      SELECT id FROM replicated_playlist_snapshots
+                      WHERE replicated_playlist_id = ?
+                      ORDER BY id DESC LIMIT 10
+                  )
+                """,
+                (replicated_playlist_id, replicated_playlist_id)
+            )
             await db.commit()
-            return row["id"]
+            return snapshot_id
+
+    async def cleanup_replicated_playlist_history(self, max_snapshots_per_replica: int = 10, max_events_per_replica: int = 500):
+        """Prune historical snapshots and event logs to prevent unbounded SQLite file growth."""
+        async with self.get_connection() as db:
+            await db.execute(
+                """
+                DELETE FROM replicated_playlist_snapshots
+                WHERE id NOT IN (
+                    SELECT id FROM (
+                        SELECT id, ROW_NUMBER() OVER (PARTITION BY replicated_playlist_id ORDER BY id DESC) as rn
+                        FROM replicated_playlist_snapshots
+                    ) WHERE rn <= ?
+                )
+                """,
+                (max_snapshots_per_replica,)
+            )
+            await db.execute(
+                """
+                DELETE FROM replicated_playlist_events
+                WHERE id NOT IN (
+                    SELECT id FROM (
+                        SELECT id, ROW_NUMBER() OVER (PARTITION BY replicated_playlist_id ORDER BY id DESC) as rn
+                        FROM replicated_playlist_events
+                    ) WHERE rn <= ?
+                )
+                """,
+                (max_events_per_replica,)
+            )
+            await db.commit()
 
     async def get_latest_replicated_playlist_snapshot(self, replicated_playlist_id: int) -> Optional[dict]:
         """Get the most recent source playlist snapshot for a replica."""

@@ -345,7 +345,9 @@ class PlaylistReplicatorService:
         revision = hashlib.sha256(revision_content.encode()).hexdigest()[:12]
 
         if not dry_run:
-            await db.save_replicated_playlist_snapshot(replicated_id, revision, snapshot_tracks)
+            latest_snap = await db.get_latest_replicated_playlist_snapshot(replicated_id)
+            if not latest_snap or getattr(config, "last_source_revision", None) != revision:
+                await db.save_replicated_playlist_snapshot(replicated_id, revision, snapshot_tracks)
             await db.update_replicated_playlist(replicated_id, last_source_revision=revision)
 
         # 2. Fetch all verified locker uploads (isolated by user if user_id is set)

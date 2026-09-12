@@ -492,3 +492,65 @@ async def test_mocked_end_to_end_family_workflow():
         mom_ytm = await client.get("/api/ytm/account", headers=mom["headers"])
         assert mom_ytm.status_code == 200
         assert mom_ytm.json()["user_id"] == mom["user"].id
+
+
+@pytest.mark.asyncio
+async def test_family_shared_playlists_track_count_uses_snapshot_not_events():
+    """Verify that family shared playlists return track_count from snapshot, not total event log count."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        dad = await create_test_user("dad_pl", UserRole.USER)
+        mom = await create_test_user("mom_pl", UserRole.USER)
+
+        # Create family
+        fam_resp = await client.post("/api/families", json={"name": "Music Family"}, headers=dad["headers"])
+        assert fam_resp.status_code == 200
+        family_id = fam_resp.json()["id"]
+
+        # Add mom with playlist permission
+        await client.post(
+            f"/api/families/{family_id}/members",
+            json={"user_id": mom["user"].id, "role": "MEMBER"},
+            headers=dad["headers"]
+        )
+        await client.put(
+            f"/api/families/{family_id}/members/{mom['user'].id}/privacy",
+            json={
+                "show_account_in_family": True,
+                "allow_family_uploads": True,
+                "allow_family_playlists": True,
+                "allow_family_sync": True
+            },
+            headers=mom["headers"]
+        )
+
+        # Create replicated playlist for mom
+        rep_id = await db.create_replicated_playlist(
+            source_playlist_id="SRC_PL_99",
+            source_playlist_name="Mom Chill",
+            destination_playlist_id="DEST_PL_99",
+            destination_playlist_name="Mom Chill - Locker",
+            user_id=mom["user"].id
+        )
+
+        # Save snapshot with 1,000 tracks
+        tracks = [{"videoId": f"vid_{i}", "title": f"Song {i}"} for i in range(1000)]
+        await db.save_replicated_playlist_snapshot(rep_id, "rev_1", tracks)
+
+        # Simulate 250 historical audit events in replicated_playlist_events
+        for i in range(250):
+            await db.record_replicated_playlist_event(
+                replicated_playlist_id=rep_id,
+                action="EXCLUDE",
+                source_video_id=f"vid_{i}",
+                reason="Test audit event"
+            )
+
+        # Fetch family playlists
+        res = await client.get(f"/api/families/{family_id}/playlists", headers=dad["headers"])
+        assert res.status_code == 200
+        playlists = res.json()
+        assert len(playlists) == 1
+        pl = playlists[0]
+        assert pl["name"] == "Mom Chill - Locker"
+        # track_count MUST be 1000 (from snapshot), NOT 250 (from events)!
+        assert pl["track_count"] == 1000

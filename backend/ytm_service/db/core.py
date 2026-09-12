@@ -378,6 +378,7 @@ class CoreDbMixin:
                             destination_playlist_name TEXT NOT NULL,
                             enabled BOOLEAN DEFAULT 1,
                             sync_interval_seconds INTEGER DEFAULT 300,
+                            replica_mode TEXT DEFAULT '1to1_youtube',
                             last_source_revision TEXT,
                             last_sync_at TIMESTAMP,
                             last_sync_status TEXT,
@@ -386,23 +387,33 @@ class CoreDbMixin:
                             UNIQUE(user_id, source_playlist_id, destination_playlist_id)
                         );
                     """)
-                    await db.execute("""
+                    # Check if old table has replica_mode
+                    async with db.execute("PRAGMA table_info(replicated_playlists)") as col_cur:
+                        old_cols = [c["name"] for c in await col_cur.fetchall()]
+                    replica_mode_col = "replica_mode," if "replica_mode" in old_cols else "'1to1_youtube' as replica_mode,"
+                    await db.execute(f"""
                         INSERT INTO replicated_playlists_new (
                             id, user_id, source_playlist_id, source_playlist_name,
                             destination_playlist_id, destination_playlist_name,
-                            enabled, sync_interval_seconds, last_source_revision,
+                            enabled, sync_interval_seconds, replica_mode, last_source_revision,
                             last_sync_at, last_sync_status, created_at, updated_at
                         )
                         SELECT
                             id, user_id, source_playlist_id, source_playlist_name,
                             destination_playlist_id, destination_playlist_name,
-                            enabled, sync_interval_seconds, last_source_revision,
+                            enabled, sync_interval_seconds, {replica_mode_col} last_source_revision,
                             last_sync_at, last_sync_status, created_at, updated_at
                         FROM replicated_playlists;
                     """)
                     await db.execute("DROP TABLE replicated_playlists;")
                     await db.execute("ALTER TABLE replicated_playlists_new RENAME TO replicated_playlists;")
                     await db.execute("PRAGMA foreign_keys = ON;")
+
+            # Ensure replica_mode column exists on replicated_playlists
+            async with db.execute("PRAGMA table_info(replicated_playlists)") as cursor:
+                rp_cols = [row["name"] for row in await cursor.fetchall()]
+                if "replica_mode" not in rp_cols:
+                    await db.execute("ALTER TABLE replicated_playlists ADD COLUMN replica_mode TEXT DEFAULT '1to1_youtube'")
 
             await db.execute("CREATE INDEX IF NOT EXISTS idx_replicated_playlists_user_id ON replicated_playlists(user_id);")
             await db.execute("CREATE INDEX IF NOT EXISTS idx_ytm_uploads_user_id ON ytm_uploads(user_id);")
@@ -415,6 +426,7 @@ class CoreDbMixin:
         # Bootstrap initial admin user & single-user installation migration if no users exist
         await self._ensure_admin_bootstrapped()
         await self.reconcile_stuck_sync_jobs()
+        await self.cleanup_replicated_playlist_history()
 
     async def get_setting(self, key: str, default: Any = None) -> Any:
         async with self.get_connection() as db:

@@ -640,7 +640,10 @@ class FamilyDbMixin:
                        COALESCE(rp.destination_playlist_name, rp.source_playlist_name) as title,
                        rp.user_id as owner_user_id,
                        u.username as owner_username,
-                       (SELECT COUNT(*) FROM replicated_playlist_events WHERE replicated_playlist_id = rp.id) as track_count
+                       COALESCE(
+                           (SELECT track_count FROM replicated_playlist_snapshots WHERE replicated_playlist_id = rp.id ORDER BY id DESC LIMIT 1),
+                           0
+                       ) as track_count
                 FROM replicated_playlists rp
                 JOIN users u ON rp.user_id = u.id
                 WHERE rp.user_id IN (
