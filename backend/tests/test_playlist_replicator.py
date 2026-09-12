@@ -415,13 +415,13 @@ async def test_api_replicated_playlists_crud(temp_db):
          patch("ytm_service.routers.playlists.playlist_replicator.reconcile_playlist", new_callable=AsyncMock) as mock_reconcile:
 
         mock_details.return_value = {"title": "406 Lyricists"}
-        mock_reconcile.return_value = {
-            "replicated_id": 1,
+        mock_reconcile.side_effect = lambda rep_id, dry_run=False, config=None: {
+            "replicated_id": rep_id,
             "source_tracks_count": 10,
             "desired_tracks_count": 8,
             "excluded_count": 2,
             "status": "CHANGES_REQUIRED",
-            "dry_run": True
+            "dry_run": dry_run
         }
 
         # 1. Create
@@ -454,6 +454,11 @@ async def test_api_replicated_playlists_crud(temp_db):
         dry_res = client.post(f"/api/replicated-playlists/{rep_id}/dry-run", headers=auth_headers)
         assert dry_res.status_code == 200
         assert dry_res.json()["dry_run"] is True
+
+        # 4b. Sync endpoint
+        sync_res = client.post(f"/api/replicated-playlists/{rep_id}/sync", headers=auth_headers)
+        assert sync_res.status_code == 200
+        assert sync_res.json()["dry_run"] is False
 
         # 5. Update
         update_res = client.put(f"/api/replicated-playlists/{rep_id}", json={

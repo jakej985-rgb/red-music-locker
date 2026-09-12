@@ -303,12 +303,13 @@ async def _call_ytm(func, *args, user_id=None, **kwargs):
 class PlaylistReplicatorService:
     """Service to orchestrate playlist watching, locker matching, and reconciliation."""
 
-    async def reconcile_playlist(self, replicated_id: int, dry_run: bool = False) -> dict:
+    async def reconcile_playlist(self, replicated_id: int, dry_run: bool = False, config: Optional[Any] = None) -> dict:
         """
         Execute or preview reconciliation for a configured replicated playlist.
         Guarantees source playlist remains read-only.
         """
-        config = await db.get_replicated_playlist(replicated_id)
+        if config is None:
+            config = await db.get_replicated_playlist(replicated_id)
         if not config:
             raise ValueError(f"Replicated playlist configuration {replicated_id} not found")
 
