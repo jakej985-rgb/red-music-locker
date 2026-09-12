@@ -1081,6 +1081,26 @@ class ApiService {
     throw Exception('Failed to load family playlists: ${response.body}');
   }
 
+  Future<Map<String, dynamic>> syncFamilyPlaylist(String familyId, String playlistId, {bool uploadMissing = false}) async {
+    final uri = Uri.parse('$baseUrl/api/families/$familyId/playlists/$playlistId/sync?upload_missing=$uploadMissing');
+    final response = await _post(uri);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    final err = jsonDecode(response.body);
+    throw Exception(err['detail'] ?? 'Failed to sync family playlist');
+  }
+
+  Future<Map<String, dynamic>> syncAllFamilyPlaylists(String familyId) async {
+    final uri = Uri.parse('$baseUrl/api/families/$familyId/playlists/sync-all');
+    final response = await _post(uri);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    final err = jsonDecode(response.body);
+    throw Exception(err['detail'] ?? 'Failed to sync all family playlists');
+  }
+
   Future<Map<String, dynamic>> createMultiPlaylists(
     String familyId,
     String title,

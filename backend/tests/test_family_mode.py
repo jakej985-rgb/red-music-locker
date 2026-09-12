@@ -554,3 +554,26 @@ async def test_family_shared_playlists_track_count_uses_snapshot_not_events():
         assert pl["name"] == "Mom Chill - Locker"
         # track_count MUST be 1000 (from snapshot), NOT 250 (from events)!
         assert pl["track_count"] == 1000
+
+        # Test single family playlist sync endpoint
+        from unittest.mock import patch, AsyncMock
+        with patch("ytm_service.routers.family.playlist_replicator.reconcile_playlist", new_callable=AsyncMock) as mock_sync:
+            mock_sync.return_value = {"status": "IN_SYNC", "replicated_id": rep_id}
+            sync_res = await client.post(
+                f"/api/families/{family_id}/playlists/{rep_id}/sync",
+                headers=dad["headers"]
+            )
+            assert sync_res.status_code == 200
+            assert sync_res.json()["status"] == "success"
+            assert sync_res.json()["synced_replicas"] >= 1
+
+        # Test sync-all family playlists endpoint
+        with patch("ytm_service.routers.family.playlist_replicator.reconcile_playlist", new_callable=AsyncMock) as mock_sync_all:
+            mock_sync_all.return_value = {"status": "IN_SYNC", "replicated_id": rep_id}
+            sync_all_res = await client.post(
+                f"/api/families/{family_id}/playlists/sync-all",
+                headers=dad["headers"]
+            )
+            assert sync_all_res.status_code == 200
+            assert sync_all_res.json()["status"] == "success"
+            assert sync_all_res.json()["total"] >= 1

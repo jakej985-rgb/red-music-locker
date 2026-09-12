@@ -21,6 +21,8 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
   List<FamilyUploadHistoryItem> _history = [];
   List<FamilyQueueItem> _queue = [];
   List<FamilyPlaylistItem> _playlists = [];
+  final Set<String> _syncingPlaylistIds = {};
+  bool _isSyncingAllPlaylists = false;
 
   bool _isLoading = true;
   bool _isActionLoading = false;
@@ -902,6 +904,79 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
     );
   }
 
+  Future<void> _syncSingleFamilyPlaylist(FamilyPlaylistItem p, {bool uploadMissing = false}) async {
+    if (_selectedFamily == null) return;
+    final pid = p.playlistId.toString();
+    setState(() {
+      _syncingPlaylistIds.add(pid);
+    });
+    try {
+      final res = await apiService.syncFamilyPlaylist(_selectedFamily!.id, pid, uploadMissing: uploadMissing);
+      if (mounted) {
+        final count = res['synced_replicas'] ?? 1;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(uploadMissing
+                ? 'Synced "${p.title}" and queued missing uploads to family lockers!'
+                : 'Successfully synced "${p.title}" across $count member account(s)!'),
+            backgroundColor: const Color(0xFF00897B),
+          ),
+        );
+        _loadFamilyDetails(_selectedFamily!.id);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sync failed: ${e.toString().replaceFirst("Exception: ", "")}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _syncingPlaylistIds.remove(pid);
+        });
+      }
+    }
+  }
+
+  Future<void> _syncAllFamilyPlaylists() async {
+    if (_selectedFamily == null || _isSyncingAllPlaylists) return;
+    setState(() {
+      _isSyncingAllPlaylists = true;
+    });
+    try {
+      final res = await apiService.syncAllFamilyPlaylists(_selectedFamily!.id);
+      if (mounted) {
+        final total = res['total'] ?? _playlists.length;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Successfully synced $total family playlist(s) with YouTube Music!'),
+            backgroundColor: const Color(0xFF00897B),
+          ),
+        );
+        _loadFamilyDetails(_selectedFamily!.id);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to sync all playlists: ${e.toString().replaceFirst("Exception: ", "")}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSyncingAllPlaylists = false;
+        });
+      }
+    }
+  }
+
   Widget _buildPlaylistsTab() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -910,6 +985,15 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
           children: [
             const Text('Family Playlists', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
             const Spacer(),
+            ElevatedButton.icon(
+              onPressed: (_isSyncingAllPlaylists || _playlists.isEmpty) ? null : _syncAllFamilyPlaylists,
+              icon: _isSyncingAllPlaylists
+                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.sync, size: 16),
+              label: Text(_isSyncingAllPlaylists ? 'Syncing...' : 'Sync All Playlists'),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00897B), foregroundColor: Colors.white),
+            ),
+            const SizedBox(width: 8),
             ElevatedButton.icon(
               onPressed: () => _showCreateOrClonePlaylistDialog(initialCloneMode: true),
               icon: const Icon(Icons.cloud_download, size: 16),
@@ -932,13 +1016,74 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
           Expanded(
             child: ListView.separated(
               itemCount: _playlists.length,
-              separatorBuilder: (_, _) => const Divider(color: Colors.white10, height: 1),
+              separatorBuilder: (_, _) => const SizedBox(height: 6),
               itemBuilder: (ctx, idx) {
                 final p = _playlists[idx];
-                return ListTile(
-                  leading: const Icon(Icons.playlist_play, color: Color(0xFFFF0000)),
-                  title: Text(p.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                  subtitle: Text('Owner: ${p.ownerUsername} • ${p.trackCount} tracks', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                final pid = p.playlistId.toString();
+                final isSyncing = _syncingPlaylistIds.contains(pid);
+                return Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1E28),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF0000).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.playlist_play, color: Color(0xFFFF0000), size: 24),
+                    ),
+                    title: Text(p.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text('Owner: ${p.ownerUsername} • ${p.trackCount} tracks', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: isSyncing ? null : () => _syncSingleFamilyPlaylist(p, uploadMissing: false),
+                          icon: isSyncing
+                              ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                              : const Icon(Icons.sync, size: 16),
+                          label: Text(isSyncing ? 'Syncing...' : 'Sync Now'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF00897B),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert, color: Colors.grey),
+                          color: const Color(0xFF2A2A38),
+                          tooltip: 'More actions',
+                          onSelected: (val) {
+                            if (val == 'sync_with_uploads') {
+                              _syncSingleFamilyPlaylist(p, uploadMissing: true);
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'sync_with_uploads',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.cloud_upload_outlined, color: Colors.cyanAccent, size: 18),
+                                  SizedBox(width: 10),
+                                  Text('Sync & Upload Missing Tracks', style: TextStyle(color: Colors.white, fontSize: 13)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               },
             ),

@@ -124,11 +124,20 @@ async def create_replicated_playlist(req: ReplicatedPlaylistCreate, current_user
         raise HTTPException(status_code=500, detail=f"Failed to create replicated playlist: {e}")
 
 
+async def _validate_playlist_access(config, current_user: User) -> bool:
+    if not config:
+        return False
+    if current_user.role == UserRole.ADMIN or config.user_id == current_user.id:
+        return True
+    permitted = await db.get_permitted_family_accounts(current_user.id)
+    return any(a.get("user_id") == config.user_id and a.get("allow_family_playlists") for a in permitted)
+
+
 @router.get("/api/replicated-playlists/{replicated_id}")
 async def get_replicated_playlist(replicated_id: int, current_user: User = Depends(require_authenticated_user)):
     """Get details, current configuration, and status of a replicated playlist."""
     config = await db.get_replicated_playlist(replicated_id)
-    if not config or (current_user.role != UserRole.ADMIN and config.user_id != current_user.id):
+    if not await _validate_playlist_access(config, current_user):
         raise HTTPException(status_code=404, detail="Replicated playlist not found")
 
     # Run preview/dry-run to return stats (source count, locker matches, excluded count)
@@ -171,7 +180,7 @@ async def delete_replicated_playlist(replicated_id: int, current_user: User = De
 async def sync_replicated_playlist(replicated_id: int, current_user: User = Depends(require_authenticated_user)):
     """Trigger immediate reconciliation of a replicated playlist."""
     config = await db.get_replicated_playlist(replicated_id)
-    if not config or (current_user.role != UserRole.ADMIN and config.user_id != current_user.id):
+    if not await _validate_playlist_access(config, current_user):
         raise HTTPException(status_code=404, detail="Replicated playlist not found")
     try:
         res = await playlist_replicator.reconcile_playlist(replicated_id, dry_run=False, config=config)
@@ -187,7 +196,7 @@ async def sync_replicated_playlist(replicated_id: int, current_user: User = Depe
 async def dry_run_replicated_playlist(replicated_id: int, current_user: User = Depends(require_authenticated_user)):
     """Preview reconciliation actions (add, remove, move, exclude) without modifying YouTube Music."""
     config = await db.get_replicated_playlist(replicated_id)
-    if not config or (current_user.role != UserRole.ADMIN and config.user_id != current_user.id):
+    if not await _validate_playlist_access(config, current_user):
         raise HTTPException(status_code=404, detail="Replicated playlist not found")
     try:
         res = await playlist_replicator.reconcile_playlist(replicated_id, dry_run=True, config=config)
@@ -203,7 +212,7 @@ async def dry_run_replicated_playlist(replicated_id: int, current_user: User = D
 async def get_replicated_playlist_events(replicated_id: int, limit: int = 100, current_user: User = Depends(require_authenticated_user)):
     """Get audit trail of reconciliation actions (ADD, REMOVE, MOVE, NOOP, EXCLUDE)."""
     config = await db.get_replicated_playlist(replicated_id)
-    if not config or (current_user.role != UserRole.ADMIN and config.user_id != current_user.id):
+    if not await _validate_playlist_access(config, current_user):
         raise HTTPException(status_code=404, detail="Replicated playlist not found")
     events = await db.get_replicated_playlist_events(replicated_id, limit=limit)
     return events

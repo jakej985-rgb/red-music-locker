@@ -26,7 +26,9 @@ from ..models import (
     FamilyMultiPlaylistRequest,
     FamilyUploadHistoryItem,
     FamilySyncResponse,
-    FamilyPlaylistItem
+    FamilyPlaylistItem,
+    ReplicatedPlaylist,
+    UserRole
 )
 from ..database import db
 from ..dependencies import require_authenticated_user
@@ -370,6 +372,137 @@ async def list_family_shared_playlists(family_id: str, current_user: User = Depe
         raise HTTPException(status_code=403, detail="You are not a member of this family")
     items = await db.get_family_permitted_playlists(family_id, current_user.id)
     return [FamilyPlaylistItem(**item) for item in items]
+
+
+@router.post("/api/families/{family_id}/playlists/{playlist_id}/sync")
+async def sync_family_playlist(
+    family_id: str,
+    playlist_id: str,
+    upload_missing: bool = Query(False),
+    current_user: User = Depends(require_authenticated_user)
+):
+    """Sync a shared family playlist across YouTube Music and optionally upload missing songs."""
+    mem = await db.get_family_member(family_id, current_user.id)
+    if not mem:
+        raise HTTPException(status_code=403, detail="You are not a member of this family")
+
+    try:
+        rep_int_id = int(playlist_id)
+        config = await db.get_replicated_playlist(rep_int_id)
+    except (ValueError, TypeError):
+        config = None
+
+    if not config:
+        async with db.get_connection() as conn:
+            async with conn.execute(
+                "SELECT * FROM replicated_playlists WHERE source_playlist_id = ? OR destination_playlist_id = ? LIMIT 1",
+                (playlist_id, playlist_id)
+            ) as cursor:
+                row = await cursor.fetchone()
+                if row:
+                    config = ReplicatedPlaylist(**dict(row))
+
+    if not config:
+        raise HTTPException(status_code=404, detail="Replicated playlist not found")
+
+    if config.user_id != current_user.id and current_user.role != UserRole.ADMIN:
+        owner_mem = await db.get_family_member(family_id, config.user_id)
+        if not owner_mem or not owner_mem.allow_family_playlists:
+            raise HTTPException(status_code=403, detail="Playlist owner does not permit family playlist sync")
+
+    # Identify all sibling replicas for this playlist in the family
+    replicas_to_sync = [config]
+    if config.source_playlist_id:
+        permitted_members = await db.get_family_permitted_playlists(family_id, current_user.id)
+        sibling_ids = [
+            int(p["playlist_id"]) for p in permitted_members
+            if p.get("source_playlist_id") == config.source_playlist_id and int(p["playlist_id"]) != config.id
+        ]
+        for sid in sibling_ids:
+            s_cfg = await db.get_replicated_playlist(sid)
+            if s_cfg:
+                replicas_to_sync.append(s_cfg)
+
+    results = []
+    for rep in replicas_to_sync:
+        try:
+            res = await playlist_replicator.reconcile_playlist(rep.id, dry_run=False, config=rep)
+            results.append({
+                "replicated_id": rep.id,
+                "user_id": rep.user_id,
+                "status": "success",
+                "details": res
+            })
+        except Exception as e:
+            logger.warning(f"Failed to reconcile replica {rep.id}: {e}")
+            results.append({
+                "replicated_id": rep.id,
+                "user_id": rep.user_id,
+                "status": "failed",
+                "error": str(e)
+            })
+
+    # If upload_missing is True, also launch background download & upload to family accounts
+    if upload_missing and config.source_playlist_id:
+        try:
+            details = await ytm_client.get_playlist_details(config.source_playlist_id, user_id=current_user.id)
+            tracks = details.get("tracks", [])
+            target_uids = [r.user_id for r in replicas_to_sync if r.user_id]
+            if tracks and target_uids:
+                playlist_sync_manager.start_sync(
+                    playlist_id=config.source_playlist_id,
+                    playlist_title=config.source_playlist_name or config.destination_playlist_name,
+                    tracks_to_sync=tracks,
+                    destination_user_ids=target_uids
+                )
+        except Exception as ex:
+            logger.warning(f"Could not trigger background download & upload for family playlist: {ex}")
+
+    return {
+        "status": "success",
+        "family_id": family_id,
+        "synced_replicas": len(results),
+        "results": results
+    }
+
+
+@router.post("/api/families/{family_id}/playlists/sync-all")
+async def sync_all_family_playlists(
+    family_id: str,
+    current_user: User = Depends(require_authenticated_user)
+):
+    """Sync all permitted shared family playlists for the given family."""
+    mem = await db.get_family_member(family_id, current_user.id)
+    if not mem:
+        raise HTTPException(status_code=403, detail="You are not a member of this family")
+
+    permitted_playlists = await db.get_family_permitted_playlists(family_id, current_user.id)
+    results = []
+    for p in permitted_playlists:
+        rep_id = int(p["playlist_id"])
+        try:
+            res = await playlist_replicator.reconcile_playlist(rep_id, dry_run=False)
+            results.append({
+                "playlist_id": rep_id,
+                "name": p.get("name"),
+                "status": "success",
+                "details": res
+            })
+        except Exception as e:
+            logger.warning(f"Failed to reconcile family playlist {rep_id}: {e}")
+            results.append({
+                "playlist_id": rep_id,
+                "name": p.get("name"),
+                "status": "failed",
+                "error": str(e)
+            })
+
+    return {
+        "status": "success",
+        "family_id": family_id,
+        "total": len(results),
+        "results": results
+    }
 
 
 @router.post("/api/families/{family_id}/playlists/multi")
