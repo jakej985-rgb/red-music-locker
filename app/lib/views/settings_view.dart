@@ -1370,6 +1370,14 @@ class _SettingsViewState extends State<SettingsView> {
                     ),
                     if (user != null) ...[
                       const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.edit, size: 16, color: AppColors.textSecondary),
+                        tooltip: 'Edit Username',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => _showEditUserDialog(user),
+                      ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
@@ -1649,10 +1657,12 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   Future<void> _showEditUserDialog(User user) async {
+    final usernameController = TextEditingController(text: user.username);
     final passwordController = TextEditingController();
     String selectedRole = user.role;
     bool isActive = user.isActive;
     String? dialogError;
+    final isAdmin = apiService.currentUser?.isAdmin == true;
 
     await showDialog(
       context: context,
@@ -1670,6 +1680,17 @@ class _SettingsViewState extends State<SettingsView> {
                 const SizedBox(height: 8),
               ],
               TextField(
+                controller: usernameController,
+                style: const TextStyle(color: AppColors.textPrimary),
+                decoration: const InputDecoration(
+                  labelText: 'Username',
+                  labelStyle: TextStyle(color: AppColors.textMuted),
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
                 controller: passwordController,
                 obscureText: true,
                 style: const TextStyle(color: AppColors.textPrimary),
@@ -1680,33 +1701,35 @@ class _SettingsViewState extends State<SettingsView> {
                   isDense: true,
                 ),
               ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: selectedRole,
-                dropdownColor: AppColors.surfaceElevated,
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
-                decoration: const InputDecoration(
-                  labelText: 'Role',
-                  labelStyle: TextStyle(color: AppColors.textMuted),
-                  border: OutlineInputBorder(),
-                  isDense: true,
+              if (isAdmin) ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedRole,
+                  dropdownColor: AppColors.surfaceElevated,
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                  decoration: const InputDecoration(
+                    labelText: 'Role',
+                    labelStyle: TextStyle(color: AppColors.textMuted),
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'USER', child: Text('Standard User')),
+                    DropdownMenuItem(value: 'ADMIN', child: Text('Administrator')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setDialogState(() => selectedRole = val);
+                  },
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'USER', child: Text('Standard User')),
-                  DropdownMenuItem(value: 'ADMIN', child: Text('Administrator')),
-                ],
-                onChanged: (val) {
-                  if (val != null) setDialogState(() => selectedRole = val);
-                },
-              ),
-              const SizedBox(height: 12),
-              SwitchListTile(
-                activeThumbColor: AppColors.primary,
-                title: const Text('Active Account', style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
-                contentPadding: EdgeInsets.zero,
-                value: isActive,
-                onChanged: (val) => setDialogState(() => isActive = val),
-              ),
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  activeThumbColor: AppColors.primary,
+                  title: const Text('Active Account', style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                  contentPadding: EdgeInsets.zero,
+                  value: isActive,
+                  onChanged: (val) => setDialogState(() => isActive = val),
+                ),
+              ],
             ],
           ),
           actions: [
@@ -1722,14 +1745,28 @@ class _SettingsViewState extends State<SettingsView> {
               ),
               onPressed: () async {
                 try {
-                  await apiService.updateUser(
-                    user.id,
-                    password: passwordController.text.isNotEmpty ? passwordController.text : null,
-                    role: selectedRole,
-                    isActive: isActive,
-                  );
+                  final newUsername = usernameController.text.trim();
+                  if (newUsername.isEmpty) {
+                    setDialogState(() => dialogError = 'Username cannot be empty');
+                    return;
+                  }
+                  if (isAdmin) {
+                    await apiService.updateUser(
+                      user.id,
+                      username: newUsername != user.username ? newUsername : null,
+                      password: passwordController.text.isNotEmpty ? passwordController.text : null,
+                      role: selectedRole,
+                      isActive: isActive,
+                    );
+                    await _loadUsers();
+                  } else {
+                    await apiService.updateProfile(
+                      username: newUsername != user.username ? newUsername : null,
+                      password: passwordController.text.isNotEmpty ? passwordController.text : null,
+                    );
+                  }
                   if (ctx.mounted) Navigator.of(ctx).pop();
-                  await _loadUsers();
+                  if (mounted) setState(() {});
                 } catch (e) {
                   setDialogState(() => dialogError = e.toString().replaceFirst('Exception: ', ''));
                 }

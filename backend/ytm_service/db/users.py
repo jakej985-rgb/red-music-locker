@@ -201,10 +201,13 @@ class UserDbMixin:
         update_or_role: Optional[Union[UserUpdate, UserRole, str]] = None,
         is_active: Optional[bool] = None,
         password_hash: Optional[str] = None,
-        role: Optional[Union[UserRole, str]] = None
+        role: Optional[Union[UserRole, str]] = None,
+        username: Optional[str] = None
     ) -> Optional[User]:
         if isinstance(update_or_role, UserUpdate):
             req = update_or_role
+            if req.username is not None:
+                username = req.username
             if req.role is not None:
                 role = req.role
             if req.is_active is not None:
@@ -216,6 +219,9 @@ class UserDbMixin:
 
         clauses = []
         params = []
+        if username is not None:
+            clauses.append("username = ?")
+            params.append(username)
         if role is not None:
             clauses.append("role = ?")
             params.append(role.value if isinstance(role, UserRole) else str(role).upper())

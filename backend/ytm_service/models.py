@@ -278,6 +278,7 @@ class UserCreate(BaseModel):
 
 
 class UserUpdate(BaseModel):
+    username: Optional[str] = None
     password: Optional[str] = None
     role: Optional[UserRole] = None
     is_active: Optional[bool] = None

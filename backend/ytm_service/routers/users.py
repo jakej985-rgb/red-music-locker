@@ -62,10 +62,18 @@ async def create_user_admin(req: UserCreate, admin: User = Depends(require_admin
 
 @router.put("/api/admin/users/{user_id}", response_model=UserResponse)
 async def update_user_admin(user_id: str, req: UserUpdate, admin: User = Depends(require_admin)):
-    """Admin-only: update user details, role, or active status."""
+    """Admin-only: update user details, username, role, or active status."""
     user = await db.get_user_by_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if req.username is not None:
+        cleaned = req.username.strip()
+        if not cleaned:
+            raise HTTPException(status_code=400, detail="Username cannot be empty")
+        existing = await db.get_user_by_username(cleaned)
+        if existing and existing.id != user_id:
+            raise HTTPException(status_code=409, detail=f"Username '{cleaned}' already exists")
+        req.username = cleaned
     updated = await db.update_user(user_id, req)
     if not updated:
         raise HTTPException(status_code=404, detail="User not found")

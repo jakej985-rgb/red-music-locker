@@ -5,6 +5,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
 
 from ..models import (
     AuthSetupRequest,
@@ -13,7 +14,8 @@ from ..models import (
     UserRole,
     UserResponse,
     UserLoginRequest,
-    UserLoginResponse
+    UserLoginResponse,
+    UserUpdate
 )
 from ..database import db
 from ..dependencies import require_authenticated_user
@@ -26,6 +28,36 @@ from ..auth_session import AuthStartRequest, AuthStartResponse, AuthSessionRespo
 logger = logging.getLogger("ytm_sync")
 
 router = APIRouter(tags=["Authentication"])
+
+class ProfileUpdateRequest(BaseModel):
+    username: Optional[str] = None
+    password: Optional[str] = None
+
+@router.put("/api/auth/me", response_model=UserResponse)
+async def update_current_user_profile(
+    req: ProfileUpdateRequest,
+    current_user: User = Depends(require_authenticated_user)
+):
+    """Update profile of current authenticated user (username, password)."""
+    if req.username is not None:
+        cleaned = req.username.strip()
+        if not cleaned:
+            raise HTTPException(status_code=400, detail="Username cannot be empty")
+        existing = await db.get_user_by_username(cleaned)
+        if existing and existing.id != current_user.id:
+            raise HTTPException(status_code=409, detail=f"Username '{cleaned}' already exists")
+        req.username = cleaned
+    updated = await db.update_user(current_user.id, UserUpdate(username=req.username, password=req.password))
+    if not updated:
+        raise HTTPException(status_code=404, detail="User not found")
+    return UserResponse(
+        id=updated.id,
+        username=updated.username,
+        role=updated.role,
+        is_active=updated.is_active,
+        created_at=updated.created_at,
+        last_login_at=updated.last_login_at,
+    )
 
 @router.post("/api/auth/login", response_model=UserLoginResponse, dependencies=[Depends(rate_limit_dependency(5, 60, "login"))])
 async def login(req: UserLoginRequest):

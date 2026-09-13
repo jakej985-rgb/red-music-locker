@@ -171,8 +171,9 @@ class ApiService {
     throw Exception(err['detail'] ?? 'Failed to create user');
   }
 
-  Future<User> updateUser(String userId, {String? password, String? role, bool? isActive}) async {
+  Future<User> updateUser(String userId, {String? username, String? password, String? role, bool? isActive}) async {
     final body = <String, dynamic>{};
+    if (username != null && username.isNotEmpty) body['username'] = username;
     if (password != null && password.isNotEmpty) body['password'] = password;
     if (role != null) body['role'] = role;
     if (isActive != null) body['is_active'] = isActive;
@@ -183,10 +184,33 @@ class ApiService {
       body: jsonEncode(body),
     );
     if (response.statusCode == 200) {
-      return User.fromJson(jsonDecode(response.body));
+      final updated = User.fromJson(jsonDecode(response.body));
+      if (_currentUser?.id == userId) {
+        _currentUser = updated;
+      }
+      return updated;
     }
     final err = jsonDecode(response.body);
     throw Exception(err['detail'] ?? 'Failed to update user');
+  }
+
+  Future<User> updateProfile({String? username, String? password}) async {
+    final body = <String, dynamic>{};
+    if (username != null && username.isNotEmpty) body['username'] = username;
+    if (password != null && password.isNotEmpty) body['password'] = password;
+
+    final response = await _put(
+      Uri.parse('$baseUrl/api/auth/me'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+    if (response.statusCode == 200) {
+      final updated = User.fromJson(jsonDecode(response.body));
+      _currentUser = updated;
+      return updated;
+    }
+    final err = jsonDecode(response.body);
+    throw Exception(err['detail'] ?? 'Failed to update profile');
   }
 
   Future<void> deleteUser(String userId) async {
