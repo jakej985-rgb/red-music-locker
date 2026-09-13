@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radius.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
 
@@ -66,7 +68,13 @@ class _AccountSelectorWidgetState extends State<AccountSelectorWidget> {
       return const SizedBox(
         height: 36,
         width: 140,
-        child: Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))),
+        child: Center(
+          child: SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+          ),
+        ),
       );
     }
 
@@ -77,15 +85,15 @@ class _AccountSelectorWidgetState extends State<AccountSelectorWidget> {
     return Container(
       height: 36,
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E28),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white12),
+        color: AppColors.surfaceElevated,
+        borderRadius: AppRadius.button,
+        border: Border.all(color: AppColors.borderSubtle),
       ),
       child: PopupMenuButton<dynamic>(
         tooltip: 'Switch Target Account / Family Mode',
         offset: const Offset(0, 42),
-        color: const Color(0xFF222230),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        color: AppColors.surfaceElevated,
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.dialog),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: Row(
@@ -94,19 +102,19 @@ class _AccountSelectorWidgetState extends State<AccountSelectorWidget> {
               Icon(
                 _selectedAccount?.isSelf == true ? Icons.person : Icons.group,
                 size: 16,
-                color: const Color(0xFF3EA6FF),
+                color: AppColors.info,
               ),
               const SizedBox(width: 8),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 160),
                 child: Text(
                   currentDisplay,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(Icons.arrow_drop_down, size: 18, color: Colors.grey),
+              const Icon(Icons.arrow_drop_down, size: 18, color: AppColors.textMuted),
             ],
           ),
         ),
@@ -127,7 +135,7 @@ class _AccountSelectorWidgetState extends State<AccountSelectorWidget> {
               height: 28,
               child: Text(
                 'TARGET ACCOUNT',
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1),
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 1),
               ),
             ),
           );
@@ -142,7 +150,7 @@ class _AccountSelectorWidgetState extends State<AccountSelectorWidget> {
                     Icon(
                       acc.isSelf ? Icons.person : Icons.person_outline,
                       size: 16,
-                      color: isCurrent ? const Color(0xFFFF0000) : Colors.white70,
+                      color: isCurrent ? AppColors.primary : AppColors.textSecondary,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -155,39 +163,39 @@ class _AccountSelectorWidgetState extends State<AccountSelectorWidget> {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                              color: isCurrent ? Colors.white : Colors.white70,
+                              color: isCurrent ? AppColors.textPrimary : AppColors.textSecondary,
                             ),
                           ),
                           if (acc.familyName != null)
                             Text(
                               acc.familyName!,
-                              style: const TextStyle(fontSize: 10, color: Colors.grey),
+                              style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
                             ),
                         ],
                       ),
                     ),
                     if (isCurrent)
-                      const Icon(Icons.check, size: 16, color: Color(0xFFFF0000))
+                      const Icon(Icons.check, size: 16, color: AppColors.primary)
                     else if (!acc.isConnected)
-                      const Text('(disconnected)', style: TextStyle(fontSize: 10, color: Colors.amber)),
+                      const Text('(disconnected)', style: TextStyle(fontSize: 10, color: AppColors.warning)),
                   ],
                 ),
               ),
             );
           }
 
-          items.add(const PopupMenuDivider());
+          items.add(const PopupMenuDivider(height: 1));
 
           items.add(
             const PopupMenuItem<dynamic>(
               value: '__family_mode__',
               child: Row(
                 children: [
-                  Icon(Icons.dashboard_customize, size: 16, color: Color(0xFF3EA6FF)),
+                  Icon(Icons.dashboard_customize, size: 16, color: AppColors.info),
                   SizedBox(width: 8),
                   Text(
                     'Family Mode Dashboard',
-                    style: TextStyle(fontSize: 13, color: Color(0xFF3EA6FF), fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: 13, color: AppColors.info, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),

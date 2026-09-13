@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../services/api_service.dart';
 
 class AuthDialog extends StatefulWidget {
@@ -107,12 +111,12 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: const Color(0xFF181820),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: AppColors.surfaceElevated,
+      shape: const RoundedRectangleBorder(borderRadius: AppRadius.dialog),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 440),
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -123,10 +127,10 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFF0000).withValues(alpha: 0.15),
+                      color: AppColors.primaryMuted,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.lock_outline, color: Color(0xFFFF0000), size: 22),
+                    child: const Icon(Icons.lock_outline, color: AppColors.primary, size: 22),
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
@@ -135,12 +139,12 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
                       children: [
                         Text(
                           'Red Music Locker Authentication',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                         ),
                         SizedBox(height: 2),
                         Text(
                           'Sign in to access your library and playlists',
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                          style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                         ),
                       ],
                     ),
@@ -152,10 +156,10 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
               // Tabs
               TabBar(
                 controller: _tabController,
-                indicatorColor: const Color(0xFFFF0000),
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.grey,
+                indicatorColor: AppColors.primary,
                 indicatorSize: TabBarIndicatorSize.tab,
+                labelColor: AppColors.textPrimary,
+                unselectedLabelColor: AppColors.textMuted,
                 tabs: const [
                   Tab(text: 'User Login'),
                   Tab(text: 'API Key'),
@@ -168,18 +172,18 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.15),
+                    color: AppColors.errorBg,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+                    border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline, color: Colors.redAccent, size: 16),
+                      const Icon(Icons.error_outline, color: AppColors.error, size: 16),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _errorMessage!,
-                          style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                          style: const TextStyle(color: AppColors.error, fontSize: 12),
                         ),
                       ),
                     ],
@@ -190,7 +194,7 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
 
               // Tab Views
               SizedBox(
-                height: 180,
+                height: 190,
                 child: TabBarView(
                   controller: _tabController,
                   children: [
@@ -200,13 +204,15 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
                       children: [
                         TextField(
                           controller: _usernameController,
-                          decoration: InputDecoration(
+                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                          decoration: const InputDecoration(
                             labelText: 'Username',
-                            prefixIcon: const Icon(Icons.person_outline, size: 20),
+                            labelStyle: TextStyle(color: AppColors.textMuted),
+                            prefixIcon: Icon(Icons.person_outline, size: 20, color: AppColors.textMuted),
                             isDense: true,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            border: OutlineInputBorder(borderRadius: AppRadius.button),
                             filled: true,
-                            fillColor: const Color(0xFF14141A),
+                            fillColor: AppColors.surfaceSubtle,
                           ),
                           onSubmitted: (_) => _handleLogin(),
                         ),
@@ -214,22 +220,25 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
                         TextField(
                           controller: _passwordController,
                           obscureText: _obscurePassword,
+                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
                           decoration: InputDecoration(
                             labelText: 'Password',
-                            prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                            labelStyle: const TextStyle(color: AppColors.textMuted),
+                            prefixIcon: const Icon(Icons.lock_outline, size: 20, color: AppColors.textMuted),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword ? Icons.visibility_off : Icons.visibility,
                                 size: 18,
+                                color: AppColors.textMuted,
                               ),
                               onPressed: () {
                                 setState(() => _obscurePassword = !_obscurePassword);
                               },
                             ),
                             isDense: true,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            border: const OutlineInputBorder(borderRadius: AppRadius.button),
                             filled: true,
-                            fillColor: const Color(0xFF14141A),
+                            fillColor: AppColors.surfaceSubtle,
                           ),
                           onSubmitted: (_) => _handleLogin(),
                         ),
@@ -237,10 +246,10 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
                         ElevatedButton(
                           onPressed: _isLoading ? null : _handleLogin,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF0000),
+                            backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                           ),
                           child: _isLoading
                               ? const SizedBox(
@@ -257,33 +266,35 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Text(
-                          'Connect directly using the system API Key found in config/auth/api_key.txt or YTM_SYNC_API_KEY.',
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
-                        ),
-                        const SizedBox(height: 12),
                         TextField(
                           controller: _apiKeyController,
                           obscureText: true,
-                          style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-                          decoration: InputDecoration(
+                          style: const TextStyle(fontFamily: 'monospace', fontSize: 13, color: AppColors.textPrimary),
+                          decoration: const InputDecoration(
                             labelText: 'Master API Key',
-                            prefixIcon: const Icon(Icons.key, size: 20),
+                            labelStyle: TextStyle(color: AppColors.textMuted),
+                            prefixIcon: Icon(Icons.vpn_key_outlined, size: 20, color: AppColors.textMuted),
+                            hintText: 'Enter API key',
                             isDense: true,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            border: OutlineInputBorder(borderRadius: AppRadius.button),
                             filled: true,
-                            fillColor: const Color(0xFF14141A),
+                            fillColor: AppColors.surfaceSubtle,
                           ),
                           onSubmitted: (_) => _handleApiKeySave(),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Allows direct connection with server administrative privileges.',
+                          style: AppTypography.caption.copyWith(color: AppColors.textMuted),
                         ),
                         const Spacer(),
                         ElevatedButton(
                           onPressed: _isLoading ? null : _handleApiKeySave,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF0000),
+                            backgroundColor: AppColors.info,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                           ),
                           child: _isLoading
                               ? const SizedBox(
@@ -296,6 +307,14 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
                       ],
                     ),
                   ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Continue as Guest', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                 ),
               ),
             ],

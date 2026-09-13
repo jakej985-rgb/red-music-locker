@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radius.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
 
@@ -104,14 +106,18 @@ class _UploadDestinationDialogState extends State<UploadDestinationDialog> {
       _errorMessage = null;
     });
 
+    final trackIds = widget.tracks
+        .where((t) => t.id != null)
+        .map((t) => t.id!)
+        .toList();
+
     try {
-      final fileIds = widget.tracks.where((t) => t.id != null).map((t) => t.id!).toList();
-      final res = await apiService.uploadToDestinations(
-        fileIds,
+      final resp = await apiService.uploadToDestinations(
+        trackIds,
         _selectedUserIds.toList(),
       );
       if (mounted) {
-        Navigator.of(context).pop(res);
+        Navigator.of(context).pop(resp);
       }
     } catch (e) {
       if (mounted) {
@@ -126,8 +132,8 @@ class _UploadDestinationDialogState extends State<UploadDestinationDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: const Color(0xFF181824),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: AppColors.surfaceElevated,
+      shape: const RoundedRectangleBorder(borderRadius: AppRadius.dialog),
       titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
       contentPadding: const EdgeInsets.symmetric(horizontal: 24),
       actionsPadding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
@@ -136,10 +142,10 @@ class _UploadDestinationDialogState extends State<UploadDestinationDialog> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF0000).withAlpha(30),
+              color: AppColors.primaryMuted,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.cloud_upload, color: Color(0xFFFF0000), size: 22),
+            child: const Icon(Icons.cloud_upload, color: AppColors.primary, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -148,13 +154,13 @@ class _UploadDestinationDialogState extends State<UploadDestinationDialog> {
               children: [
                 const Text(
                   'Select Upload Destination',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
                 Text(
                   widget.tracks.length == 1
                       ? widget.tracks.first.displayTitle
                       : '${widget.tracks.length} tracks selected',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -167,7 +173,7 @@ class _UploadDestinationDialogState extends State<UploadDestinationDialog> {
         child: _isLoading
             ? const SizedBox(
                 height: 180,
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
               )
             : Column(
                 mainAxisSize: MainAxisSize.min,
@@ -178,18 +184,18 @@ class _UploadDestinationDialogState extends State<UploadDestinationDialog> {
                       padding: const EdgeInsets.all(10),
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
-                        color: Colors.red.withAlpha(40),
+                        color: AppColors.errorBg,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.redAccent.withAlpha(100)),
+                        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.error_outline, size: 16, color: Colors.redAccent),
+                          const Icon(Icons.error_outline, size: 16, color: AppColors.error),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _errorMessage!,
-                              style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                              style: const TextStyle(color: AppColors.error, fontSize: 12),
                             ),
                           ),
                         ],
@@ -198,14 +204,14 @@ class _UploadDestinationDialogState extends State<UploadDestinationDialog> {
                   ],
                   const Text(
                     'Choose which YouTube Music account(s) will receive these tracks. Each upload is processed independently with that account\'s credentials.',
-                    style: TextStyle(fontSize: 12, color: Colors.white70),
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 16),
                   Flexible(
                     child: ListView.separated(
                       shrinkWrap: true,
                       itemCount: _accounts.length,
-                      separatorBuilder: (_, _) => const Divider(color: Colors.white10, height: 1),
+                      separatorBuilder: (_, _) => const Divider(color: AppColors.divider, height: 1),
                       itemBuilder: (ctx, idx) {
                         final acc = _accounts[idx];
                         final isSelected = _selectedUserIds.contains(acc.userId);
@@ -214,7 +220,7 @@ class _UploadDestinationDialogState extends State<UploadDestinationDialog> {
 
                         return CheckboxListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                          activeColor: const Color(0xFFFF0000),
+                          activeColor: AppColors.primary,
                           value: isSelected,
                           onChanged: (bool? val) {
                             setState(() {
@@ -227,7 +233,7 @@ class _UploadDestinationDialogState extends State<UploadDestinationDialog> {
                           },
                           secondary: CircleAvatar(
                             radius: 16,
-                            backgroundColor: acc.isSelf ? const Color(0xFFFF0000) : const Color(0xFF3EA6FF),
+                            backgroundColor: acc.isSelf ? AppColors.primary : AppColors.info,
                             child: Icon(
                               acc.isSelf ? Icons.person : Icons.group,
                               size: 16,
@@ -238,19 +244,19 @@ class _UploadDestinationDialogState extends State<UploadDestinationDialog> {
                             children: [
                               Text(
                                 acc.displayName,
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
                               ),
                               if (acc.familyName != null) ...[
                                 const SizedBox(width: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF2A2A38),
+                                    color: AppColors.surfaceSubtle,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
                                     acc.familyName!,
-                                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                    style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
                                   ),
                                 ),
                               ],
@@ -261,20 +267,20 @@ class _UploadDestinationDialogState extends State<UploadDestinationDialog> {
                             children: [
                               Text(
                                 acc.displayAccount,
-                                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
                               ),
                               if (isAlreadyUploaded) ...[
                                 const SizedBox(height: 4),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Colors.amber.withAlpha(40),
+                                    color: AppColors.warningBg,
                                     borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(color: Colors.amber.withAlpha(80)),
+                                    border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
                                   ),
                                   child: const Text(
                                     'Already uploaded to this account',
-                                    style: TextStyle(fontSize: 10, color: Colors.amber, fontWeight: FontWeight.w600),
+                                    style: TextStyle(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.w600),
                                   ),
                                 ),
                               ],
@@ -290,15 +296,15 @@ class _UploadDestinationDialogState extends State<UploadDestinationDialog> {
       actions: [
         TextButton(
           onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
         ),
         ElevatedButton(
           onPressed: _selectedUserIds.isEmpty || _isSubmitting ? null : _submit,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFF0000),
+            backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
           ),
           child: _isSubmitting
               ? const SizedBox(

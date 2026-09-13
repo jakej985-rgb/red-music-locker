@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
 
@@ -70,12 +74,12 @@ class _FolderBrowserDialogState extends State<FolderBrowserDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: const Color(0xFF181820),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      backgroundColor: AppColors.surfaceElevated,
+      shape: const RoundedRectangleBorder(borderRadius: AppRadius.dialog),
       child: Container(
         width: 620,
         height: 520,
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -85,17 +89,17 @@ class _FolderBrowserDialogState extends State<FolderBrowserDialog> {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.folder_open, color: Color(0xFF3EA6FF), size: 22),
+                    Icon(Icons.folder_open, color: AppColors.info, size: 22),
                     SizedBox(width: 10),
                     Text(
                       'Select Root Folder',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                     ),
                   ],
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close, size: 20),
+                  icon: const Icon(Icons.close, size: 20, color: AppColors.textMuted),
                   tooltip: 'Close',
                 ),
               ],
@@ -103,14 +107,14 @@ class _FolderBrowserDialogState extends State<FolderBrowserDialog> {
             const SizedBox(height: 4),
             Text(
               'Browsing internal Docker container filesystem. Select the folder where your audio files are mounted.',
-              style: TextStyle(color: Colors.grey[400], fontSize: 12),
+              style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 14),
 
             // Quick shortcuts
             Row(
               children: [
-                const Text('Quick Access: ', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                const Text('Quick Access: ', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
                 _buildQuickChip('/music'),
                 const SizedBox(width: 6),
                 _buildQuickChip('/downloads'),
@@ -122,6 +126,10 @@ class _FolderBrowserDialogState extends State<FolderBrowserDialog> {
             Row(
               children: [
                 IconButton.filledTonal(
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.surfaceSubtle,
+                    shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                  ),
                   onPressed: (_browseResult?.parentPath != null && !_isLoading)
                       ? _navigateToParent
                       : null,
@@ -132,23 +140,27 @@ class _FolderBrowserDialogState extends State<FolderBrowserDialog> {
                 Expanded(
                   child: TextField(
                     controller: _pathController,
-                    style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 13, color: AppColors.textPrimary),
                     decoration: InputDecoration(
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       filled: true,
-                      fillColor: const Color(0xFF14141A),
+                      fillColor: AppColors.surfaceSubtle,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Colors.white10),
+                        borderRadius: AppRadius.button,
+                        borderSide: const BorderSide(color: AppColors.borderSubtle),
                       ),
-                      prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: Colors.grey),
+                      prefixIcon: const Icon(Icons.location_on_outlined, size: 18, color: AppColors.textMuted),
                     ),
                     onSubmitted: (val) => _loadDirectory(val.trim()),
                   ),
                 ),
                 const SizedBox(width: 8),
                 IconButton.filledTonal(
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.surfaceSubtle,
+                    shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                  ),
                   onPressed: _isLoading ? null : () => _loadDirectory(_pathController.text.trim()),
                   icon: const Icon(Icons.refresh, size: 18),
                   tooltip: 'Reload directory',
@@ -161,9 +173,9 @@ class _FolderBrowserDialogState extends State<FolderBrowserDialog> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF14141A),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white10),
+                  color: AppColors.surfaceSubtle,
+                  borderRadius: AppRadius.card,
+                  border: Border.all(color: AppColors.borderSubtle),
                 ),
                 child: _buildDirectoryList(),
               ),
@@ -177,11 +189,11 @@ class _FolderBrowserDialogState extends State<FolderBrowserDialog> {
                 if (_browseResult != null)
                   Row(
                     children: [
-                      const Icon(Icons.storage, size: 16, color: Colors.grey),
+                      const Icon(Icons.storage, size: 16, color: AppColors.textMuted),
                       const SizedBox(width: 6),
                       Text(
                         'Free: ${_browseResult!.freeSpace} / Total: ${_browseResult!.totalSpace}',
-                        style: TextStyle(color: Colors.grey[400], fontSize: 12, fontFamily: 'monospace'),
+                        style: AppTypography.caption.copyWith(color: AppColors.textSecondary, fontFamily: 'monospace'),
                       ),
                     ],
                   )
@@ -190,14 +202,19 @@ class _FolderBrowserDialogState extends State<FolderBrowserDialog> {
                 Row(
                   children: [
                     OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                        side: const BorderSide(color: AppColors.borderSubtle),
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
                     ),
                     const SizedBox(width: 10),
                     FilledButton(
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF3EA6FF),
+                        backgroundColor: AppColors.info,
                         foregroundColor: Colors.white,
+                        shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                       ),
                       onPressed: () {
                         final selected = _pathController.text.trim();
@@ -209,7 +226,7 @@ class _FolderBrowserDialogState extends State<FolderBrowserDialog> {
                         children: [
                           Icon(Icons.check, size: 16),
                           SizedBox(width: 6),
-                          Text('Select Folder'),
+                          Text('Select Folder', style: TextStyle(fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -230,13 +247,13 @@ class _FolderBrowserDialogState extends State<FolderBrowserDialog> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: const Color(0xFF22222E),
+          color: AppColors.surfaceSubtle,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: Colors.white10),
+          border: Border.all(color: AppColors.borderSubtle),
         ),
         child: Text(
           path,
-          style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: Color(0xFF3EA6FF)),
+          style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: AppColors.info),
         ),
       ),
     );
@@ -245,7 +262,7 @@ class _FolderBrowserDialogState extends State<FolderBrowserDialog> {
   Widget _buildDirectoryList() {
     if (_isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF3EA6FF)),
+        child: CircularProgressIndicator(color: AppColors.info),
       );
     }
 
@@ -256,11 +273,15 @@ class _FolderBrowserDialogState extends State<FolderBrowserDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 36, color: Colors.amberAccent),
+              const Icon(Icons.error_outline, size: 36, color: AppColors.warning),
               const SizedBox(height: 8),
-              Text(_errorMessage!, style: const TextStyle(color: Colors.amberAccent, fontSize: 12)),
+              Text(_errorMessage!, style: const TextStyle(color: AppColors.warning, fontSize: 12)),
               const SizedBox(height: 12),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.surfaceElevated,
+                  foregroundColor: AppColors.textPrimary,
+                ),
                 onPressed: () => _loadDirectory('/'),
                 child: const Text('Go to Root (/)'),
               ),
@@ -275,24 +296,24 @@ class _FolderBrowserDialogState extends State<FolderBrowserDialog> {
       return Center(
         child: Text(
           'No subdirectories found in this folder.',
-          style: TextStyle(color: Colors.grey[500], fontSize: 13),
+          style: TextStyle(color: AppColors.textMuted, fontSize: 13),
         ),
       );
     }
 
     return ListView.separated(
       itemCount: dirs.length,
-      separatorBuilder: (_, _) => const Divider(height: 1, color: Color(0xFF22222E)),
+      separatorBuilder: (_, _) => const Divider(height: 1, color: AppColors.borderSubtle),
       itemBuilder: (context, index) {
         final d = dirs[index];
         return ListTile(
           dense: true,
-          leading: const Icon(Icons.folder, color: Color(0xFF3EA6FF), size: 20),
+          leading: const Icon(Icons.folder, color: AppColors.info, size: 20),
           title: Text(
             d.name,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
           ),
-          trailing: const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+          trailing: const Icon(Icons.chevron_right, size: 18, color: AppColors.textMuted),
           onTap: () => _loadDirectory(d.path),
         );
       },
