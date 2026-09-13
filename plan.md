@@ -1,158 +1,160 @@
-# Red Music Locker — UI/UX Modernization Implementation Plan
+# Red Music Locker — Complete Remaining UI/UX Implementation Plan
 
-## 1. Objective
+## 1. Mission
 
-Modernize the Red Music Locker Flutter application into a polished, fast, dark-first music-management application while preserving all existing functionality.
+Complete the remaining Red Music Locker UI/UX modernization work identified in the repository audit.
 
-The redesign should make the application feel like:
+The goal is to transform the existing application into a polished, fast, responsive, dark-first music locker while preserving all existing functionality.
 
-- A premium music library
-- A reliable synchronization dashboard
-- A powerful personal music locker
-- A multi-account YT Music management tool
+The application should feel like:
 
-The application should NOT become a generic admin dashboard or a Spotify clone.
+- A premium personal music library
+- A reliable YT Music synchronization tool
+- A clean music-management application
+- A powerful multi-account/family music locker
 
-The primary user workflow remains:
+It should NOT become:
 
-    Local Music
-        ↓
-    Red Music Locker
-        ↓
-    Match / Verify
-        ↓
-    YouTube Music Upload
-        ↓
-    Playlist Replication
-        ↓
-    Continuous Synchronization
+- A generic admin dashboard
+- A Spotify clone
+- An overly animated application
+- A backend rewrite
+- A complete architectural rewrite
 
-The UI should make this workflow obvious.
+The existing application already contains significant working functionality.
+
+The job is to improve the presentation, organization, responsiveness, and usability of that functionality.
 
 ---
 
-# 2. Critical Safety Rules
+# 2. Current Repository State
 
-Before making any changes:
+The current repository already contains working functionality for:
 
-## DO NOT
+- Authentication
+- YouTube Music connection
+- Account selection
+- Multiple accounts
+- Family Mode
+- Music library
+- Uploads
+- Track matching
+- Upload queue
+- Playlist synchronization
+- Playlist replication
+- Sync history
+- Metadata editing
+- Folder browsing
+- Settings
 
-- Rewrite backend APIs
-- Rewrite YT Music authentication
-- Rewrite OAuth flows
-- Rewrite upload matching logic
-- Rewrite playlist synchronization logic
-- Rewrite family/multi-account backend behavior
-- Change database schemas unless absolutely required
-- Remove existing functionality because it is not currently represented well visually
-- Replace working state management with a different framework
-- Remove existing API models
-- Change API endpoints
-- Change authentication tokens or credential handling
-- Change Docker configuration
-- Change deployment configuration
-- Remove existing tests
-- Delete existing pages simply because they are being redesigned
+Large existing views include:
 
-## MUST
+- playlists_view.dart
+- family_view.dart
+- settings_view.dart
+- metadata_editor_dialog.dart
+- uploads_view.dart
+- queue_view.dart
 
-- Preserve existing functionality
-- Preserve existing routes
-- Preserve existing API contracts
-- Preserve existing state-management architecture unless a specific UI problem requires refactoring
-- Make UI changes incrementally
-- Run formatting/analyzer/tests after each major phase
-- Keep commits logically separated
-- Verify desktop and mobile layouts
-- Verify existing sync functionality after UI changes
+These should be progressively refactored, NOT blindly rewritten.
 
 ---
 
-# 3. First Step — Repository Baseline
+# 3. Non-Negotiable Protection Rules
 
-Before changing code:
+## DO NOT CHANGE
 
-1. Inspect the complete repository.
-2. Identify:
-   - Flutter entry point
-   - routing
-   - providers/controllers
-   - API clients
-   - models
-   - services
-   - views
-   - reusable widgets
-   - theme
-   - authentication
-   - account handling
-   - playlist synchronization
-   - upload queue
-   - history
-3. Run:
+Do not modify unless absolutely required:
+
+- Backend API contracts
+- API endpoints
+- OAuth implementation
+- Authentication behavior
+- Token handling
+- Account linking logic
+- YT Music upload logic
+- Track matching logic
+- Duplicate detection
+- Playlist synchronization logic
+- Playlist replica logic
+- Family synchronization logic
+- Database schema
+- Database migrations
+- Docker configuration
+- Deployment configuration
+- Existing environment configuration
+- Existing authentication/security behavior
+
+## DO NOT REMOVE
+
+Do not remove:
+
+- Existing features
+- Existing routes
+- Existing buttons unless replaced with equivalent functionality
+- Existing account controls
+- Existing playlist functionality
+- Existing upload controls
+- Existing metadata functionality
+- Existing queue controls
+
+## UI-only rule
+
+Whenever possible:
+
+    Existing State
+          ↓
+    Existing Service
+          ↓
+    Existing API
+          ↓
+    NEW UI
+
+Do not create duplicate business logic inside the new UI.
+
+---
+
+# 4. Phase 0 — Baseline Before Changes
+
+Run:
 
     flutter pub get
     flutter analyze
     flutter test
 
-4. Record the current result.
+Record results.
 
 Create:
 
-    docs/ui-redesign/baseline.md
+    docs/ui-redesign/
+
+Create:
+
+    baseline.md
 
 Document:
 
-- analyzer result
-- test result
-- existing routes
-- existing pages
-- existing providers
-- existing major widgets
-- known warnings/errors
+- Analyzer status
+- Test status
+- Existing routes
+- Existing views
+- Existing providers/controllers
+- Existing services
+- Existing shared widgets
+- Existing theme
+- Known failures
 
-Do not fix unrelated issues during this step.
+If analyzer/tests already fail before UI work:
 
----
-
-# 4. Create UI Architecture
-
-Create a shared UI architecture instead of continuing to put large amounts of UI-specific logic inside individual pages.
-
-Recommended structure:
-
-    lib/
-      core/
-        theme/
-        navigation/
-        responsive/
-        widgets/
-
-      features/
-        dashboard/
-        library/
-        uploads/
-        playlists/
-        queue/
-        history/
-        family/
-        settings/
-
-      shared/
-        widgets/
-        models/
-        utils/
-
-Use the existing architecture where possible.
-
-Do not blindly move every existing file.
-
-Refactor only where it improves maintainability.
+- Document the failures
+- Do not claim they were caused by the redesign
+- Fix only if required for the current UI work
 
 ---
 
-# 5. Design System
+# 5. Phase 1 — Build the Design System
 
-Create a centralized Red Music Locker design system.
+Create a centralized UI foundation.
 
 Recommended:
 
@@ -166,9 +168,27 @@ Files:
     app_radius.dart
     app_typography.dart
 
-## Color direction
+If the repository uses a different architecture, place these in the closest equivalent existing location.
 
-Base:
+Do not create duplicate theme systems.
+
+---
+
+# 6. Color System
+
+Use the existing Red Music Locker branding as the source of truth.
+
+Target visual hierarchy:
+
+    Background
+        ↓
+    Surface
+        ↓
+    Elevated Surface
+        ↓
+    Modal
+
+Recommended direction:
 
     Background:
     #0B0B0F
@@ -176,110 +196,94 @@ Base:
     Surface:
     #141419
 
-    Elevated Surface:
+    Elevated:
     #1C1C23
 
     Primary:
-    Red
+    Existing Red Music Locker red
 
     Primary emphasis:
-    Bright red
+    Existing bright red
 
-    Primary text:
+    Text:
     White
 
-    Secondary text:
+    Secondary:
     Gray
 
-Use the existing brand colors if already defined.
-
-Do not duplicate literal colors throughout widgets.
-
-Instead:
-
-    Theme.of(context).colorScheme
-
-or centralized design constants.
-
----
-
-# 6. Spacing System
-
-Create standardized spacing values.
-
-Example:
-
-    xs = 4
-    sm = 8
-    md = 12
-    lg = 16
-    xl = 24
-    xxl = 32
-
-Use consistent:
-
-- card padding
-- page margins
-- section spacing
-- list spacing
-- dialog spacing
-
-Avoid every screen inventing its own padding.
-
----
-
-# 7. Border Radius
-
-Create consistent radii.
-
-Example:
-
-    small = 8
-    medium = 12
-    large = 16
-    pill = 999
+Do not hard-code colors throughout new widgets.
 
 Use:
 
-- 12–16px cards
-- pill buttons/badges
-- smaller radius for controls
+    Theme.of(context).colorScheme
 
-Avoid excessive rounded UI.
+or centralized theme constants.
 
 ---
 
-# 8. Typography
+# 7. Spacing System
 
-Create a hierarchy:
+Create:
 
-## Display
+    xs
+    sm
+    md
+    lg
+    xl
+    xxl
 
-Dashboard greeting / major page heading.
+Suggested:
 
-## Heading
+    4
+    8
+    12
+    16
+    24
+    32
 
-Section titles.
-
-## Body
-
-Track metadata and descriptions.
-
-## Label
-
-Status badges and secondary information.
-
-## Caption
-
-Timestamps and technical information.
-
-Prioritize readability over decorative typography.
+Use consistently.
 
 ---
 
-# 9. Shared Components
+# 8. Radius System
 
-Create reusable components before redesigning every page.
+Create:
+
+    small
+    medium
+    large
+    pill
+
+Suggested:
+
+    8
+    12
+    16
+    999
+
+Do not make every element extremely rounded.
+
+---
+
+# 9. Typography System
+
+Create consistent styles for:
+
+- Page titles
+- Section titles
+- Card titles
+- Body
+- Secondary text
+- Captions
+- Status labels
+
+Do not introduce unnecessary decorative fonts.
+
+---
+
+# 10. Phase 2 — Shared UI Components
+
+Create reusable components before continuing page redesign.
 
 Recommended:
 
@@ -302,15 +306,26 @@ Recommended:
     AppConfirmDialog
     AppBottomStatusBar
 
-These components must be generic enough to work across pages.
+Use existing components where they already solve the problem.
+
+Do not duplicate:
+
+- Account selector
+- Metadata editor
+- Upload destination
+- Authentication dialogs
+
+Instead, progressively bring them into the shared design language.
 
 ---
 
-# 10. Status Badge System
+# 11. AppStatusBadge
 
-Create standard statuses.
+Create one status system.
 
-Examples:
+Supported states should include only statuses actually used by the application.
+
+Potential statuses:
 
     Uploaded
     Local Only
@@ -322,22 +337,124 @@ Examples:
     Pending
     Streaming Only
 
-Each status should have:
+Each status must have:
 
-- icon
-- text
-- semantic meaning
-- consistent visual treatment
+- Icon
+- Label
+- Semantic meaning
+- Consistent appearance
 
 Do not rely solely on color.
 
-Every status must remain understandable if the user cannot distinguish colors.
+---
+
+# 12. AppTrackRow
+
+Create the standard track row.
+
+Desktop:
+
+    Selection
+    Artwork
+    Track
+    Artist
+    Album
+    Status
+    Actions
+
+Mobile:
+
+    Artwork
+    Track
+    Artist
+    Status
+    More
+
+The same component should be reusable by:
+
+- Library
+- Uploads
+- Playlist detail
+- Queue where appropriate
+- History where appropriate
 
 ---
 
-# 11. Responsive Navigation
+# 13. AppPlaylistCard
 
-The existing desktop navigation should remain.
+Create reusable playlist card.
+
+Show:
+
+- Artwork/collage
+- Playlist name
+- Track count
+- Locker count
+- Missing count
+- Sync state
+
+Do not duplicate playlist-card styling in multiple pages.
+
+---
+
+# 14. AppAccountCard
+
+Create reusable account card.
+
+Show:
+
+- Account identity
+- Connection status
+- Upload information where available
+- Playlist information where available
+- Action
+
+Use this in Family Mode.
+
+---
+
+# 15. AppEmptyState
+
+Create a standard empty state containing:
+
+- Icon
+- Title
+- Explanation
+- Optional action
+
+Examples:
+
+    Your music locker is empty.
+
+    Add a music folder to get started.
+
+    [Add Music Folder]
+
+---
+
+# 16. AppErrorState
+
+Create standard error presentation.
+
+Show:
+
+    Something went wrong.
+
+    Explanation
+
+    [Retry]
+
+Optional:
+
+    Technical Details ▼
+
+Never display raw stack traces as the primary UI.
+
+---
+
+# 17. Phase 3 — App Shell
+
+Update the existing shell without changing routing behavior.
 
 Desktop:
 
@@ -345,9 +462,9 @@ Desktop:
 
 Mobile:
 
-    BottomNavigationBar / NavigationBar
+    NavigationBar
 
-Desktop primary navigation:
+Desktop primary:
 
     Home
     Library
@@ -361,7 +478,7 @@ Secondary:
     Family
     Settings
 
-Mobile primary navigation:
+Mobile:
 
     Home
     Library
@@ -369,185 +486,157 @@ Mobile primary navigation:
     Playlists
     More
 
-More contains:
+More:
 
     Queue
     History
     Family
     Settings
 
-Do not cram the desktop navigation onto mobile.
-
 ---
 
-# 12. Global Account Selector
+# 18. Account Selector
 
-Make the active YT Music account visible throughout the application.
+Consolidate account selection into one reusable UI.
 
-Desktop:
-
-    [ Account Avatar ] Jake ▼
-
-Mobile:
+Example:
 
     Jake ▼
 
-Selector should show:
+Opening it:
 
-    Jake
-    Michaela
-    Other accounts
-    Family
+    SELECT ACCOUNT
 
-If supported by the existing backend, show:
+    ● Jake
+      Personal
 
-    Personal
-    Family
-    Connection status
+    ○ Michaela
+      Personal
 
-Do not change account-management behavior.
+    ○ Other Account
 
-This is only a UI improvement.
+    ○ Family
+
+    + Add Account
+
+Use the existing account state.
+
+Do not change account switching behavior.
 
 ---
 
-# 13. Global Sync Status
+# 19. Global Sync Status
 
 Add a persistent compact status indicator.
 
 Example:
 
     ● YTM Connected
-    ↑ 17 uploading
+    ↑ 17 queued
     ✓ Synced 4m ago
 
-This can live:
+Use existing state.
 
-- in the desktop app shell
-- at the bottom of the navigation
-- or as a compact mobile header/status area
+Do not create duplicate polling.
 
-It should use existing state.
-
-Do not create a second sync engine.
+If queue/sync state is unavailable, show only the information that actually exists.
 
 ---
 
-# 14. Dashboard Redesign
+# 20. Queue Navigation Badge
 
-File:
-
-    dashboard_view.dart
-
-Convert the dashboard into a "Locker Status" command center.
-
-## Header
-
-Show:
-
-    Good morning/afternoon/evening
-
-    MUSIC LOCKER
-
-    Short explanation of current state.
-
-## Primary statistics
-
-Show:
-
-    Local Tracks
-    Uploaded
-    Missing
-    Sync %
+Show pending queue count next to Queue.
 
 Example:
 
-    1,284
+    Queue 17
+
+Only update based on existing reactive queue state.
+
+Do not introduce aggressive polling.
+
+---
+
+# 21. Phase 4 — Dashboard
+
+Redesign Dashboard into a Locker Status page.
+
+## Header
+
+    MUSIC LOCKER
+
+    Current account
+
+    Short status summary
+
+## Statistics
+
+Show real existing data:
+
     Local Tracks
-
-    1,127
     Uploaded
-
-    157
     Missing
+    Synced %
 
-    93%
-    Synced
-
-Use existing data.
-
-Do not invent statistics.
+Do not fabricate values.
 
 ## Primary action
 
-Large:
-
     SYNC NOW
 
-Secondary actions:
+Secondary:
 
     Scan Library
     Upload Missing
     Manage Playlists
 
-## Recent activity
+## Recent Activity
 
-Display:
+Show existing activity data.
 
-    Recent uploads
-    Playlist reconciliation
-    Library scans
-    Match issues
+## Attention Required
 
-## Attention section
-
-Only display when action is required.
+Only show when actual problems exist.
 
 Examples:
 
-    7 tracks need review
-    3 uploads failed
-    2 playlists need reconciliation
+    Tracks needing review
+    Failed uploads
+    Playlist reconciliation problems
 
-Button:
+Action:
 
     Review
 
-The dashboard should answer:
+---
 
-1. Is everything okay?
-2. What is happening?
-3. Does the user need to do anything?
+# 22. Dashboard UX Rule
+
+The dashboard should answer three questions immediately:
+
+1. Is my locker healthy?
+2. What is currently happening?
+3. Do I need to do anything?
+
+Avoid turning the dashboard into a duplicate of Library or Queue.
 
 ---
 
-# 15. Music Library Redesign
+# 23. Phase 5 — Music Library
 
-File:
+Redesign the Library around music management.
 
-    library_view.dart
-
-Make this the primary music-management experience.
-
-## Header
+Header:
 
     MUSIC LIBRARY
 
-    1,284 tracks
+    Track count
 
-## Search
-
-Persistent search:
+Search:
 
     Search music...
 
-Search should search using existing backend/state functionality.
-
-Do not create a duplicate search engine.
-
-## Filters
-
-Provide:
+Filters:
 
     All
     Uploaded
@@ -555,40 +644,47 @@ Provide:
     Needs Review
     Failed
 
-## View switcher
+View:
 
     Grid
     List
 
-Persist the user's preferred view if practical.
+---
 
-## Grid
+# 24. Library Grid
 
-Album artwork.
+Use:
 
-Display:
+    AppTrackGrid
 
-    artwork
-    track title
-    artist
-    album
-    status
+Each item:
 
-## List
-
-Columns:
-
-    Selection
     Artwork
-    Track
+    Title
     Artist
     Album
     Status
-    Actions
 
-## Selection
+Use lazy loading.
 
-When tracks are selected:
+Do not load unnecessary full-resolution artwork.
+
+---
+
+# 25. Library List
+
+Use:
+
+    AppTrackRow
+
+Support:
+
+- Selection
+- Bulk actions
+- Status
+- Secondary actions
+
+When selected:
 
     157 selected
 
@@ -597,58 +693,60 @@ When tracks are selected:
     Remove
     More
 
-Replace the normal toolbar with the selection toolbar.
+---
 
-## Track interaction
+# 26. Library Sorting
 
-Clicking a track opens:
+If supported by existing data, provide:
 
-    Track Details
+    Title
+    Artist
+    Album
+    Date Added
+    Upload Status
 
-Potential contents:
+Do not add sorting that requires backend work unless necessary.
+
+---
+
+# 27. Track Details
+
+Use existing metadata functionality.
+
+A track detail view should expose:
 
     Artwork
     Title
     Artist
     Album
     Metadata
-    Local path
-    Upload state
-    YTM state
-    Playlist membership
+    Local Path
+    Upload State
+    YTM State
+    Playlist Membership
 
-Reuse existing metadata editor functionality.
+Do not duplicate metadata-editing logic.
 
 ---
 
-# 16. YTM Uploads Redesign
+# 28. Phase 6 — YTM Uploads
 
-File:
+Redesign Uploads.
 
-    uploads_view.dart
-
-Purpose:
-
-Show what exists in YT Music and the upload state.
-
-## Header
+Header:
 
     YOUTUBE MUSIC
 
-    1,127 uploaded tracks
+    Uploaded track count
 
-    Last synchronized: 4 minutes ago
+    Last sync time
 
-## Connection status
-
-Display active account.
-
-Example:
+Account:
 
     ● Connected
     Jake's YouTube Music
 
-## Filters
+Filters:
 
     All
     Recently Uploaded
@@ -656,50 +754,47 @@ Example:
     Duplicates
     Failed
 
-## Track list
+Use AppTrackRow.
 
-Display:
-
-    Artwork
-    Track
-    Artist
-    Album
-    Upload date
-    Status
-    Actions
-
-## Upload state
-
-Use shared status badges.
-
-## Bulk selection
-
-Support existing bulk operations.
-
-Do not alter upload behavior.
+Preserve all existing upload actions.
 
 ---
 
-# 17. Playlist Page Redesign
+# 29. Upload Status
 
-File:
+Make status immediately understandable.
 
-    playlists_view.dart
+Examples:
 
-This should receive significant visual attention.
+    Uploaded
+    Uploading
+    Pending
+    Failed
+    Duplicate
+    Needs Review
 
-## Playlist overview
+Use existing application state.
 
-Show playlist cards.
+---
 
-Each card:
+# 30. Phase 7 — Playlists
 
-    Artwork collage
-    Playlist name
-    Track count
-    Locker count
-    Missing count
-    Sync state
+This is a high-priority redesign.
+
+Do NOT rewrite playlist functionality.
+
+Instead:
+
+1. Extract reusable components.
+2. Reduce the size of playlists_view.dart.
+3. Separate playlist overview from playlist detail.
+4. Preserve existing replica logic.
+
+---
+
+# 31. Playlist Overview
+
+Display playlist cards.
 
 Example:
 
@@ -711,25 +806,15 @@ Example:
 
     ● Synced
 
-## Search
+Use:
 
-    Search playlists...
-
-## Filters
-
-    All
-    Synced
-    Needs Attention
-    Watching
-    Not Watching
-
-Only expose filters supported by actual application state.
+    AppPlaylistCard
 
 ---
 
-# 18. Playlist Detail Page
+# 32. Playlist Detail
 
-Separate playlist overview from track management.
+Create a clear hierarchy.
 
 Header:
 
@@ -753,49 +838,50 @@ Filters:
     Missing
     Streaming Only
 
-Track list should clearly indicate where each track exists.
-
-Example:
-
-    ✓ Local
-    ✓ Locker
-    ⚠ Missing
-
-This is important because the application's playlist replication behavior depends on locker-only tracks.
+Only show categories supported by the existing application.
 
 ---
 
-# 19. Playlist Sync Visualization
+# 33. Playlist Sync Summary
 
-Add a compact synchronization summary.
-
-Example:
-
-    PLAYLIST STATUS
+Show:
 
     84 total
 
-    █████████████████░░ 94%
-
-    79 available in locker
+    79 available
     5 missing
 
     Last reconciliation:
-    4 minutes ago
+    timestamp
 
-Use existing sync state.
-
-Do not calculate misleading percentages.
+Do not calculate percentages from incomplete data.
 
 ---
 
-# 20. Queue Redesign
+# 34. Playlist Replica UI
 
-File:
+Preserve the existing:
 
-    queue_view.dart
+    Locker Only (1:1 Ordered)
 
-Make Queue a live operations page.
+functionality.
+
+Make the UI clearer around:
+
+- Source playlist
+- Replica playlist
+- Locker-only behavior
+- Current sync state
+- Last synchronization
+- Missing tracks
+
+Do not alter the synchronization algorithm.
+
+---
+
+# 35. Phase 8 — Queue
+
+Redesign Queue as an operations center.
 
 Header:
 
@@ -808,7 +894,9 @@ Statistics:
     Completed
     Failed
 
-## Active
+---
+
+# 36. Queue Active Jobs
 
 Show:
 
@@ -817,60 +905,43 @@ Show:
     Artist
     Operation
     Progress
-    Current state
+    Status
 
 Example:
 
     Uploading
 
-    █████████████░░░ 82%
+    ████████████░░ 82%
 
-## Waiting
+Use:
 
-Show queued tracks.
+    AppProgressCard
 
-## Failed
+---
 
-Give each failure:
+# 37. Queue Failed Jobs
 
+Show:
+
+    Track
     Error summary
     Retry
 
-## Bulk controls
+Do not expose unnecessary technical information.
 
-    Retry Failed
-    Clear Completed
-    Pause
-    Resume
+Allow:
 
-Only expose controls that already exist in application logic.
+    Details
 
----
+where useful.
 
-# 21. Queue Navigation Indicator
-
-Display pending queue count beside Queue.
-
-Example:
-
-    Queue
-    17
-
-Use existing queue state.
-
-Do not poll excessively.
-
-Use existing reactive state.
+Preserve existing retry/cancel functionality.
 
 ---
 
-# 22. Sync History Redesign
+# 38. Phase 9 — Sync History
 
-File:
-
-    history_view.dart
-
-Convert history into a timeline/activity interface.
+Convert History into a proper activity timeline.
 
 Filters:
 
@@ -880,7 +951,9 @@ Filters:
     Scans
     Errors
 
-Timeline:
+Example:
+
+    TODAY
 
     13:42
     ✓ Upload completed
@@ -893,70 +966,73 @@ Timeline:
     13:20
     ⚠ Match requires review
 
-Each item should support:
+Use:
 
-    View Details
-
-Details can show:
-
-    timestamp
-    operation
-    account
-    item
-    result
-    error
-    relevant metadata
-
-Do not remove historical data.
+    AppActivityItem
 
 ---
 
-# 23. Family Mode Redesign
+# 39. History Details
 
-File:
+Each history event should support details where useful:
 
-    family_view.dart
+    Timestamp
+    Operation
+    Account
+    Item
+    Result
+    Error
+    Relevant metadata
 
-Make account management visually obvious.
+Do not delete historical information.
+
+---
+
+# 40. Phase 10 — Family Mode
+
+Make Family Mode account-centered.
 
 Header:
 
     FAMILY MUSIC LOCKER
 
-    3 connected accounts
+    Connected account count
 
-## Account cards
+Use:
 
-Each account card:
+    AppAccountCard
 
-    Avatar
-    Name
-    Connection state
-    Upload count
-    Playlist count
-
-Action:
-
-    Manage
-
-## Account management
+for each account.
 
 Show:
 
+    Account
     Connection
-    Permissions
-    Upload destination
-    Playlist behavior
-
-Preserve existing account functionality.
+    Upload information
+    Playlist information
+    Manage
 
 ---
 
-# 24. Family Upload Destination
+# 41. Family Account Management
 
-This should be one of the clearest workflows.
+Preserve all existing:
 
-When uploading:
+- Account connection
+- Account switching
+- Family sync
+- Permissions
+- Playlist behavior
+
+Only improve presentation.
+
+---
+
+# 42. Family Upload Destination
+
+Make upload destination extremely clear.
+
+Example:
 
     UPLOAD DESTINATION
 
@@ -968,21 +1044,23 @@ When uploading:
 
 Or:
 
+    TARGET ACCOUNTS
+
     ☑ Jake
     ☑ Michaela
     ☐ Account 3
 
-If multiple accounts are selected, clearly display:
+Then:
 
     Uploading to 2 accounts
 
-Do not change backend upload semantics.
+Preserve existing backend behavior.
 
 ---
 
-# 25. Account Destination Preview
+# 43. Multi-Account Confirmation
 
-Before a multi-account upload, show:
+Before a multi-account upload:
 
     UPLOAD DESTINATION
 
@@ -999,60 +1077,54 @@ Before a multi-account upload, show:
     [Cancel]
     [Upload]
 
-This reduces accidental uploads to the wrong account.
+This is a UI safety improvement.
 
 ---
 
-# 26. Settings Redesign
+# 44. Phase 11 — Settings
 
-File:
+Break the huge settings page into sections.
 
-    settings_view.dart
+Sections:
 
-Break the large settings page into logical groups.
-
-## Account
+    ACCOUNT
 
     YouTube Music
     Accounts
     Family Mode
 
-## Library
+    LIBRARY
 
     Music folders
     Scanning
     Metadata
     Artwork
 
-## Uploads
+    UPLOADS
 
     Upload behavior
     Verification
-    Retry behavior
+    Retry
     Concurrency
 
-## Playlists
+    PLAYLISTS
 
     Playlist watching
     Replica behavior
     Synchronization
 
-## System
+    SYSTEM
 
     API
     Database
     Logs
     Diagnostics
 
-Do not change the actual settings.
-
-Only reorganize their presentation.
-
 ---
 
-# 27. Settings Components
+# 45. Settings Components
 
-Create reusable setting widgets:
+Create:
 
     SettingsSection
     SettingsTile
@@ -1061,604 +1133,108 @@ Create reusable setting widgets:
     SettingsValueTile
     SettingsDangerTile
 
-Example:
+Use existing setting values and callbacks.
 
-    UPLOAD BEHAVIOR
-
-    Automatic Uploads
-    Automatically upload new music
-                              ON
-
-    Verify Uploads
-    Verify tracks after upload
-                              ON
-
-Keep settings visually simple.
+Do not change setting semantics.
 
 ---
 
-# 28. Search
+# 46. Phase 12 — Metadata Editor
 
-Add global search if existing backend capabilities support it.
+The metadata editor is extremely large and should be progressively decomposed.
 
-Search categories:
+Organize into:
+
+    BASIC INFORMATION
+
+    TRACK INFORMATION
+
+    ARTWORK
+
+    YOUTUBE MUSIC
+
+Use existing fields and save behavior.
+
+---
+
+# 47. Metadata Editor Mobile
+
+Desktop:
+
+    Dialog
+
+Mobile:
+
+    Full-screen page or full-height modal
+
+Avoid a tiny dialog containing dozens of fields.
+
+Do not change metadata model behavior.
+
+---
+
+# 48. Phase 13 — Folder Browser
+
+Improve visual consistency.
+
+Maintain:
+
+- folder navigation
+- selection
+- permissions
+- path handling
+
+Improve:
+
+- breadcrumbs
+- folder rows
+- selection state
+- primary action
+- empty state
+- error state
+
+Do not change filesystem behavior.
+
+---
+
+# 49. Phase 14 — Authentication
+
+Do not rewrite authentication.
+
+Only modernize:
+
+- login dialog
+- account connection UI
+- loading state
+- errors
+- success state
+
+Authentication logic remains untouched.
+
+---
+
+# 50. Phase 15 — Global Search
+
+Implement only after the primary UI is complete.
+
+Search:
 
     Tracks
     Artists
     Albums
     Playlists
 
-Example:
+Start client-side if the required data is already available.
 
-    "Metallica"
-
-Results:
-
-    TRACKS
-    Enter Sandman
-    Nothing Else Matters
-
-    ALBUMS
-    Metallica
-
-    PLAYLISTS
-    Metal Favorites
-
-Do not build a large search infrastructure if it isn't needed for MVP.
-
-A local client-side search over loaded data is acceptable initially.
+Do not add backend search infrastructure unnecessarily.
 
 ---
 
-# 29. Empty States
+# 51. Phase 16 — Responsive Design
 
-Every major page needs a useful empty state.
+This is mandatory.
 
-Examples:
-
-## Empty Library
-
-    Your music locker is empty.
-
-    Add a music folder to get started.
-
-    [Add Music Folder]
-
-## Empty Playlists
-
-    No YT Music playlists found.
-
-    Connect an account and sync playlists.
-
-## Empty Queue
-
-    Everything is caught up.
-
-    No uploads are waiting.
-
-## Empty History
-
-    No sync activity yet.
-
-Empty states should explain:
-
-- what happened
-- why the page is empty
-- what the user can do next
-
----
-
-# 30. Loading States
-
-Avoid blank screens.
-
-Use:
-
-- skeleton rows
-- skeleton cards
-- progress indicators
-- meaningful loading text
-
-Example:
-
-    Loading your music library...
-
-Do not show a spinner indefinitely without context.
-
----
-
-# 31. Error States
-
-Create a consistent error component.
-
-Example:
-
-    Couldn't load playlists.
-
-    The YouTube Music connection may have expired.
-
-    [Retry]
-
-For technical errors:
-
-    Details ▼
-
-Do not expose raw stack traces by default.
-
-Allow technical details behind an expandable section.
-
----
-
-# 32. Dialog Redesign
-
-Audit:
-
-    metadata_editor_dialog.dart
-
-and all other dialogs.
-
-Dialogs should:
-
-- have consistent width
-- have consistent padding
-- have clear titles
-- use primary action on the right
-- avoid excessive fields on one screen
-- use sections when dialogs are large
-
-For very large dialogs, convert to a full-screen responsive page on mobile.
-
----
-
-# 33. Metadata Editor
-
-Improve visual grouping.
-
-Sections:
-
-    BASIC INFORMATION
-
-    Title
-    Artist
-    Album
-    Album Artist
-
-    TRACK INFORMATION
-
-    Track #
-    Disc #
-    Genre
-    Year
-
-    ARTWORK
-
-    Artwork preview
-    Replace artwork
-
-    YT MUSIC
-
-    Matching status
-    Upload status
-
-Use existing metadata functionality.
-
-Do not change the underlying model.
-
----
-
-# 34. Responsive Rules
-
-Desktop:
-
-    max content width where appropriate
-    multi-column cards
-    navigation rail
-
-Tablet:
-
-    reduced columns
-    collapsible navigation
-
-Mobile:
-
-    bottom navigation
-    single-column layout
-    full-width cards
-    horizontal filter scrolling
-    full-screen dialogs where needed
-
-Minimum target:
-
-    360px width
-
-Verify at:
-
-    360
-    390
-    430
-    768
-    1024
-    1440+
-
----
-
-# 35. Accessibility
-
-Ensure:
-
-- buttons have semantic labels
-- icons aren't the only way to understand an action
-- adequate contrast
-- keyboard navigation where applicable
-- focus states
-- tooltips for unfamiliar icons
-- status information is not color-only
-- touch targets are sufficiently large
-
----
-
-# 36. Performance
-
-Red Music Locker should remain fast.
-
-Avoid:
-
-- unnecessary animations
-- excessive blur
-- large shader effects
-- animated backgrounds
-- rebuilding the entire library for one track update
-- loading every artwork image simultaneously
-- unnecessary network requests
-
-Prefer:
-
-- lazy lists
-- lazy grids
-- cached artwork
-- const widgets
-- selective provider watching
-- pagination where already supported
-- existing caching mechanisms
-
----
-
-# 37. Artwork Handling
-
-Artwork should become a major visual component.
-
-Use:
-
-- square artwork
-- consistent aspect ratio
-- placeholder artwork
-- rounded corners
-- lazy loading
-
-Do not load full-resolution artwork when thumbnails are sufficient.
-
-For lists, use small thumbnails.
-
-For detail pages, use larger artwork.
-
----
-
-# 38. Desktop Library Density
-
-Desktop users should be able to manage large libraries efficiently.
-
-Provide:
-
-- compact list mode
-- multi-select
-- keyboard-friendly interaction
-- sorting
-- filtering
-- search
-
-Recommended sort options:
-
-    Title
-    Artist
-    Album
-    Date Added
-    Upload Status
-
-Only expose sorting supported by available data.
-
----
-
-# 39. Mobile Library
-
-Mobile list rows should prioritize:
-
-    Artwork
-    Title
-    Artist
-    Status
-
-Secondary metadata can be hidden.
-
-Swipe gestures should NOT be required for important actions.
-
-Use:
-
-    ⋮
-
-for secondary actions.
-
----
-
-# 40. Navigation State
-
-Ensure the current page is always visually obvious.
-
-Selected navigation item:
-
-    icon
-    label
-    accent indicator
-
-Do not use excessive red.
-
-Red should communicate selection/action.
-
----
-
-# 41. Animation
-
-Use subtle animations only.
-
-Allowed:
-
-- page transitions
-- selection changes
-- progress changes
-- card hover
-- expandable sections
-
-Avoid:
-
-- constant motion
-- animated backgrounds
-- unnecessary particle effects
-- excessive scaling
-
-Target:
-
-    fast
-    responsive
-    stable
-
----
-
-# 42. Dark Mode
-
-Red Music Locker should remain dark-first.
-
-Ensure:
-
-- cards aren't pure black against black
-- surfaces have subtle hierarchy
-- dividers are subtle
-- red isn't overused
-
-Hierarchy:
-
-    Background
-        ↓
-    Surface
-        ↓
-    Elevated Surface
-        ↓
-    Modal / Dialog
-
----
-
-# 43. Light Mode
-
-If light mode already exists, keep it functional.
-
-Do not design light mode independently from scratch.
-
-Map the same semantic colors:
-
-    background
-    surface
-    elevated
-    primary
-    error
-    warning
-    success
-
-Ensure all new widgets work in both modes.
-
----
-
-# 44. Component Extraction
-
-Large views must be progressively decomposed.
-
-Prioritize:
-
-    playlists_view.dart
-    family_view.dart
-    settings_view.dart
-    metadata_editor_dialog.dart
-
-Move repeated sections into reusable widgets.
-
-Do not create hundreds of tiny files.
-
-Extract when a component:
-
-- is reused
-- has its own state
-- is visually complex
-- is independently testable
-- makes the parent page easier to understand
-
----
-
-# 45. State Management Rules
-
-Existing Riverpod/state-management implementation should remain.
-
-Widgets should consume state rather than directly duplicating business logic.
-
-Avoid:
-
-    API request
-    parse response
-    mutate unrelated state
-    build UI
-
-all inside one build method.
-
-Prefer:
-
-    Provider/Controller
-          ↓
-    View Model / State
-          ↓
-    UI
-
-Do not rewrite functioning providers merely for style.
-
----
-
-# 46. API Boundary
-
-The UI redesign must not change API contracts.
-
-Existing:
-
-    services
-    repositories
-    API clients
-
-remain authoritative.
-
-UI components should consume their existing data.
-
-If the UI requires data that does not currently exist:
-
-1. Determine whether it can be derived locally.
-2. If not, document the requirement.
-3. Only then consider a backend/API change.
-
-Do not silently modify API behavior.
-
----
-
-# 47. Testing Strategy
-
-Add widget tests for shared components.
-
-At minimum test:
-
-    AppStatusBadge
-    AppTrackRow
-    AppPlaylistCard
-    AppStatCard
-    AppSearchBar
-    AppSelectionToolbar
-    AppEmptyState
-    AppErrorState
-
-Test responsive behavior where practical.
-
----
-
-# 48. Page-Level Testing
-
-For each page verify:
-
-## Dashboard
-
-- loads
-- statistics appear
-- Sync Now works
-- activity appears
-- attention items appear
-
-## Library
-
-- loads tracks
-- search works
-- filters work
-- grid works
-- list works
-- selection works
-- existing metadata editor opens
-
-## Uploads
-
-- account state appears
-- uploads display
-- filters work
-- existing actions work
-
-## Playlists
-
-- playlists load
-- cards display
-- playlist details open
-- tracks display
-- sync works
-- replica behavior remains intact
-
-## Queue
-
-- active jobs display
-- progress updates
-- retry works
-- completed items display
-
-## History
-
-- events display
-- filters work
-- details open
-
-## Family
-
-- accounts display
-- account switching works
-- upload destinations work
-- multi-account functionality remains intact
-
-## Settings
-
-- all existing settings remain functional
-
----
-
-# 49. Integration Testing
-
-After UI changes, specifically verify:
-
-    OAuth login
-    Account linking
-    Account switching
-    Library scan
-    Track matching
-    Upload
-    Upload verification
-    Queue processing
-    Playlist synchronization
-    Playlist replication
-    Family uploads
-    Multi-account destination selection
-    History recording
-
-The UI redesign is NOT complete until these continue working.
-
----
-
-# 50. Visual Regression Checklist
-
-Capture screenshots at:
+Test:
 
     360px
     390px
@@ -1668,31 +1244,356 @@ Capture screenshots at:
     1440px
     1920px
 
-For:
+Check every major page.
+
+---
+
+# 52. Responsive Rules
+
+At mobile:
+
+- NavigationBar
+- Single-column cards
+- Compact track rows
+- Horizontal filter scrolling
+- Full-width controls
+- Full-screen metadata dialogs
+- No horizontal overflow
+
+At tablet:
+
+- Reduced card columns
+- Flexible navigation
+- Reduced information density
+
+Desktop:
+
+- NavigationRail
+- Multi-column layout
+- Dense library list
+- Wide dialogs
+- Multi-column statistics
+
+---
+
+# 53. Mobile Priority
+
+On mobile, prioritize:
+
+    Artwork
+    Title
+    Artist
+    Status
+    Primary action
+
+Hide lower-priority metadata behind:
+
+    ⋮
+
+Do not require swipe gestures for important operations.
+
+---
+
+# 54. Phase 17 — Accessibility
+
+Check:
+
+- Semantic labels
+- Keyboard navigation
+- Focus states
+- Contrast
+- Touch targets
+- Tooltips
+- Screen-reader labels
+- Color-independent status
+
+Every important action must have a textual/semantic meaning.
+
+---
+
+# 55. Phase 18 — Performance
+
+Do not sacrifice speed for visual effects.
+
+Avoid:
+
+- unnecessary animations
+- excessive blur
+- animated backgrounds
+- shader-heavy effects
+- rebuilding entire libraries
+- loading every artwork at once
+
+Use:
+
+- lazy lists
+- lazy grids
+- cached artwork
+- const widgets
+- selective provider watching
+- existing caching
+- pagination where supported
+
+---
+
+# 56. Artwork Performance
+
+For lists:
+
+    Small thumbnails
+
+For cards:
+
+    Medium artwork
+
+For details:
+
+    Large artwork
+
+Never load huge original artwork where a thumbnail is sufficient.
+
+---
+
+# 57. Refactoring Strategy
+
+Do NOT perform a giant architectural rewrite.
+
+Refactor each page as it is redesigned.
+
+Recommended sequence:
+
+    Shared components
+          ↓
+    Dashboard
+          ↓
+    Library
+          ↓
+    Uploads
+          ↓
+    Playlists
+          ↓
+    Queue
+          ↓
+    History
+          ↓
+    Family
+          ↓
+    Settings
+          ↓
+    Dialogs
+
+After each major page:
+
+    flutter analyze
+    flutter test
+
+---
+
+# 58. Large File Reduction
+
+Priority files:
+
+    playlists_view.dart
+    family_view.dart
+    settings_view.dart
+    metadata_editor_dialog.dart
+    uploads_view.dart
+    queue_view.dart
+
+Do not set arbitrary line-count goals.
+
+Instead, extract sections when they:
+
+- have independent state
+- are reused
+- are visually complex
+- are independently testable
+- make the parent page easier to understand
+
+---
+
+# 59. Provider/State Rules
+
+Keep the existing state-management approach.
+
+New widgets should consume existing state.
+
+Do not move business logic into:
+
+    build()
+
+Avoid:
+
+    API request
+    business decision
+    state mutation
+    UI rendering
+
+all inside one widget.
+
+---
+
+# 60. No Duplicate Business Logic
+
+If an existing service already handles:
+
+    Upload
+
+Use it.
+
+If an existing provider already handles:
+
+    Queue state
+
+Use it.
+
+If an existing service handles:
+
+    Playlist replication
+
+Use it.
+
+If an existing provider handles:
+
+    Account selection
+
+Use it.
+
+The UI is a consumer of the application's existing logic.
+
+---
+
+# 61. Testing
+
+Add widget tests for:
+
+    AppStatusBadge
+    AppTrackRow
+    AppPlaylistCard
+    AppAccountCard
+    AppStatCard
+    AppSearchBar
+    AppSelectionToolbar
+    AppEmptyState
+    AppErrorState
+
+Test:
+
+- normal state
+- empty state
+- loading state
+- error state
+- selected state
+- mobile layout where practical
+
+---
+
+# 62. Functional Regression Tests
+
+After UI changes verify:
+
+## Authentication
+
+- [ ] Login
+- [ ] Logout
+- [ ] OAuth
+- [ ] Account connection
+
+## Accounts
+
+- [ ] Switch account
+- [ ] Multiple accounts
+- [ ] Family Mode
+
+## Library
+
+- [ ] Scan
+- [ ] Display tracks
+- [ ] Search
+- [ ] Filter
+- [ ] Select
+- [ ] Edit metadata
+
+## Upload
+
+- [ ] Upload
+- [ ] Queue
+- [ ] Progress
+- [ ] Retry
+- [ ] Verification
+- [ ] Duplicate handling
+
+## Playlists
+
+- [ ] Import
+- [ ] Watch
+- [ ] Sync
+- [ ] Replica
+- [ ] Locker-only behavior
+- [ ] Missing tracks
+
+## Family
+
+- [ ] Select account
+- [ ] Multi-account destination
+- [ ] Family sync
+
+## History
+
+- [ ] Events recorded
+- [ ] Events displayed
+
+---
+
+# 63. UI Regression Checklist
+
+Every page must be checked for:
+
+- [ ] No overflow
+- [ ] No clipped text
+- [ ] No dead buttons
+- [ ] No broken navigation
+- [ ] No duplicated controls
+- [ ] No inconsistent colors
+- [ ] No inconsistent spacing
+- [ ] No tiny touch targets
+- [ ] No unnecessary animation
+- [ ] No blank loading screens
+- [ ] Useful empty states
+- [ ] Useful error states
+
+---
+
+# 64. Visual QA
+
+Review screenshots for:
 
     Dashboard
     Library
     Uploads
     Playlists
+    Playlist Detail
     Queue
     History
     Family
     Settings
+    Metadata Editor
 
-Review:
+At:
 
-- clipping
-- overflow
-- alignment
-- inconsistent spacing
-- excessive empty space
-- text wrapping
-- card sizing
-- navigation behavior
+    360
+    390
+    430
+    768
+    1024
+    1440
+    1920
+
+Fix visual issues before proceeding to final QA.
 
 ---
 
-# 51. Documentation
+# 65. Documentation
 
 Create:
 
@@ -1702,187 +1603,116 @@ Files:
 
     README.md
     design-system.md
-    component-library.md
+    components.md
     responsive-design.md
     page-guidelines.md
     migration-notes.md
 
-Document:
-
-- colors
-- typography
-- spacing
-- components
-- page patterns
-- responsive behavior
-- decisions
+Document the new design system and reusable components.
 
 ---
 
-# 52. Implementation Order
-
-Do NOT redesign all pages simultaneously.
-
-Use this order:
-
-## Phase 1 — Baseline
-
-- Audit
-- Analyzer
-- Tests
-- Architecture documentation
-
-## Phase 2 — Design System
-
-- Colors
-- Typography
-- Spacing
-- Radius
-- Theme
-
-## Phase 3 — Shared Components
-
-- Headers
-- Cards
-- Status badges
-- Track rows
-- Playlist cards
-- Search
-- Empty/loading/error states
-
-## Phase 4 — App Shell
-
-- Navigation
-- Account selector
-- Global sync status
-- Responsive navigation
-
-## Phase 5 — Dashboard
-
-Complete dashboard redesign.
-
-## Phase 6 — Library
-
-Complete library redesign.
-
-## Phase 7 — Uploads
-
-Complete YTM Uploads redesign.
-
-## Phase 8 — Playlists
-
-Complete playlist overview and detail redesign.
-
-## Phase 9 — Queue
-
-Complete queue redesign.
-
-## Phase 10 — History
-
-Complete history redesign.
-
-## Phase 11 — Family
-
-Complete family/multi-account UI redesign.
-
-## Phase 12 — Settings
-
-Complete settings redesign.
-
-## Phase 13 — Dialogs
-
-Metadata editor
-Account selector
-Upload destination
-Confirmation dialogs
-
-## Phase 14 — Responsive Pass
-
-Test all pages across mobile/tablet/desktop.
-
-## Phase 15 — Accessibility
-
-Keyboard
-Semantics
-Contrast
-Touch targets
-
-## Phase 16 — Performance
-
-Artwork
-Lists
-Provider rebuilds
-Animations
-
-## Phase 17 — Final QA
-
-Full analyzer
-Full test suite
-Integration testing
-Visual review
-
----
-
-# 53. Git Commit Strategy
+# 66. Git Strategy
 
 Use separate commits.
 
 Recommended:
 
-    ui: add red music locker design system
+    ui: establish design system
 
-    ui: add shared library components
+    ui: add shared components
 
-    ui: redesign application shell
+    ui: modernize application shell
 
     ui: redesign dashboard
 
-    ui: redesign music library
+    ui: redesign library
 
-    ui: redesign ytm uploads
+    ui: redesign uploads
 
     ui: redesign playlists
 
     ui: redesign queue
 
-    ui: redesign sync history
+    ui: redesign history
 
     ui: redesign family mode
 
     ui: redesign settings
 
+    ui: modernize dialogs
+
     ui: improve responsive layouts
 
     ui: improve accessibility
 
-    ui: optimize artwork and list rendering
+    ui: optimize artwork rendering
 
-Do not combine the entire redesign into one massive commit.
+    test: add ui regression coverage
+
+Do not create one massive UI commit.
 
 ---
 
-# 54. Definition of Done
+# 67. Stop Conditions
 
-The redesign is complete only when:
+The agent must STOP and report instead of continuing if it discovers:
 
-## Visual
+- Backend API changes are required
+- Database schema changes are required
+- OAuth changes are required
+- Existing sync logic is broken
+- Existing playlist replication logic is broken
+- Existing multi-account behavior conflicts with the UI
+- Existing tests fail because of pre-existing problems
+- A requested visual feature requires major architectural changes
 
-- [ ] Consistent Red Music Locker design system
-- [ ] Premium dark UI
-- [ ] Clear hierarchy
-- [ ] Consistent spacing
-- [ ] Consistent cards
-- [ ] Consistent status badges
-- [ ] Consistent dialogs
-- [ ] Artwork used appropriately
+Do not silently work around these problems.
+
+---
+
+# 68. Final Acceptance Criteria
+
+The work is complete only when:
+
+## Design system
+
+- [ ] Centralized theme
+- [ ] Centralized colors
+- [ ] Centralized spacing
+- [ ] Centralized radius
+- [ ] Centralized typography
+
+## Components
+
+- [ ] Shared page header
+- [ ] Shared search
+- [ ] Shared filters
+- [ ] Shared stat cards
+- [ ] Shared status badges
+- [ ] Shared track rows
+- [ ] Shared playlist cards
+- [ ] Shared account cards
+- [ ] Shared activity items
+- [ ] Shared progress cards
+- [ ] Shared selection toolbar
+- [ ] Shared empty/loading/error states
+
+## Shell
+
+- [ ] Desktop navigation
+- [ ] Mobile navigation
+- [ ] Account selector
+- [ ] Global sync status
+- [ ] Queue badge
 
 ## Dashboard
 
 - [ ] Locker status
 - [ ] Statistics
-- [ ] Sync action
-- [ ] Recent activity
-- [ ] Attention-required section
+- [ ] Sync
+- [ ] Activity
+- [ ] Attention required
 
 ## Library
 
@@ -1904,19 +1734,20 @@ The redesign is complete only when:
 ## Playlists
 
 - [ ] Playlist cards
-- [ ] Playlist detail
-- [ ] Sync state
-- [ ] Locker-only representation
+- [ ] Playlist details
+- [ ] Sync status
 - [ ] Missing tracks
+- [ ] Locker-only tracks
 - [ ] Replica controls
 
 ## Queue
 
-- [ ] Active jobs
-- [ ] Waiting jobs
-- [ ] Completed jobs
-- [ ] Failed jobs
+- [ ] Active
+- [ ] Waiting
+- [ ] Completed
+- [ ] Failed
 - [ ] Progress
+- [ ] Retry
 
 ## History
 
@@ -1928,14 +1759,21 @@ The redesign is complete only when:
 
 - [ ] Account cards
 - [ ] Account selection
-- [ ] Upload destinations
-- [ ] Multi-account workflow
+- [ ] Upload destination
+- [ ] Multi-account selection
 
 ## Settings
 
-- [ ] Logical categories
+- [ ] Organized sections
 - [ ] Existing settings preserved
-- [ ] Improved readability
+
+## Dialogs
+
+- [ ] Metadata editor
+- [ ] Account selector
+- [ ] Upload destination
+- [ ] Authentication
+- [ ] Confirmation dialogs
 
 ## Responsive
 
@@ -1946,62 +1784,96 @@ The redesign is complete only when:
 - [ ] Desktop
 - [ ] Wide desktop
 
-## Functional
+## Accessibility
 
-- [ ] OAuth still works
-- [ ] Account linking still works
-- [ ] Account switching works
-- [ ] Uploads still work
-- [ ] Matching still works
-- [ ] Queue still works
-- [ ] Playlist sync still works
-- [ ] Playlist replication still works
-- [ ] Family mode still works
-- [ ] Multi-account uploads still work
+- [ ] Semantic controls
+- [ ] Keyboard support
+- [ ] Focus states
+- [ ] Contrast
+- [ ] Touch targets
+- [ ] Color-independent statuses
+
+## Performance
+
+- [ ] Lazy lists
+- [ ] Lazy grids
+- [ ] Artwork optimization
+- [ ] No unnecessary rebuilds
+- [ ] Minimal animations
+
+## Regression
+
+- [ ] OAuth works
+- [ ] Accounts work
+- [ ] Uploads work
+- [ ] Matching works
+- [ ] Queue works
+- [ ] Playlist sync works
+- [ ] Playlist replicas work
+- [ ] Family mode works
+- [ ] Multi-account uploads work
+- [ ] History works
 
 ## Quality
 
 - [ ] flutter analyze passes
 - [ ] flutter test passes
-- [ ] no new analyzer warnings
-- [ ] no broken routes
-- [ ] no dead buttons
-- [ ] no placeholder functionality
-- [ ] no accidental backend changes
+- [ ] No new warnings
+- [ ] No broken routes
+- [ ] No dead UI actions
+- [ ] No unintended backend changes
+- [ ] No database changes
+- [ ] No authentication changes
 
 ---
 
-# 55. Final Product Goal
+# 69. Final Product Standard
 
-Red Music Locker should ultimately feel like:
+Red Music Locker should communicate immediately:
 
-    ┌─────────────────────────────────────────────┐
-    │  RED MUSIC LOCKER             Jake ▼        │
-    ├─────────────┬───────────────────────────────┤
-    │             │                               │
-    │  Home       │  MUSIC LOCKER                 │
-    │  Library    │                               │
-    │  Uploads    │  1,284 Tracks    93% Synced   │
-    │  Playlists  │                               │
-    │  Queue      │  ┌─────────┐ ┌─────────┐      │
-    │  History    │  │ Library │ │ Upload  │      │
-    │             │  └─────────┘ └─────────┘      │
-    │  ─────────  │                               │
-    │  Family     │  RECENT ACTIVITY              │
-    │  Settings   │  ✓ Upload completed           │
-    │             │  ✓ Playlist synced            │
-    │             │  ⚠ 3 tracks need review       │
-    │             │                               │
-    ├─────────────┴───────────────────────────────┤
-    │ ● YTM Connected   ↑ 17 queued   ✓ Synced    │
-    └─────────────────────────────────────────────┘
+    MY MUSIC IS SAFE
+    MY ACCOUNTS ARE CONNECTED
+    MY LIBRARY IS ORGANIZED
+    MY UPLOADS ARE PROGRESSING
+    MY PLAYLISTS ARE SYNCHRONIZED
+    I KNOW WHEN SOMETHING NEEDS MY ATTENTION
 
-The application should communicate at a glance:
+The UI should prioritize:
 
-    "My music is safe.
-     My accounts are connected.
-     My uploads are progressing.
-     My playlists are synchronized.
-     And if something needs me, I know exactly what."
+    STATUS
+       ↓
+    LIBRARY
+       ↓
+    UPLOAD
+       ↓
+    SYNC
+       ↓
+    ATTENTION
 
-That is the target experience.
+Speed and clarity are more important than flashy visuals.
+
+The redesign should feel polished without becoming visually noisy.
+
+---
+
+# 70. Final Agent Report
+
+At completion, the agent must provide:
+
+1. Files created
+2. Files modified
+3. Components created
+4. Pages redesigned
+5. Responsive work completed
+6. Accessibility work completed
+7. Tests added
+8. flutter analyze result
+9. flutter test result
+10. Confirmation that backend/API behavior was not changed
+11. Confirmation that OAuth behavior was not changed
+12. Confirmation that upload behavior was not changed
+13. Confirmation that playlist replication was not changed
+14. Confirmation that multi-account behavior was not changed
+15. Any remaining known issues
+
+Do not claim completion if any major acceptance criterion remains incomplete.
