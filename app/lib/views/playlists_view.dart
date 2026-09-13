@@ -1,7 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../core/responsive/responsive_layout.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_radius.dart';
+import '../core/theme/app_spacing.dart';
+import '../core/theme/app_typography.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
+import '../shared/widgets/shared_widgets.dart';
 
 class PlaylistsView extends StatefulWidget {
   const PlaylistsView({super.key});
@@ -1089,6 +1095,7 @@ class _PlaylistsViewState extends State<PlaylistsView> {
   }
 
   Widget _buildPlaylistsGridView() {
+    final isMobile = ResponsiveLayout.isMobile(context);
     final filteredPlaylists = _playlists.where((p) {
       if (_searchQuery.isEmpty) return true;
       return p.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
@@ -1098,83 +1105,43 @@ class _PlaylistsViewState extends State<PlaylistsView> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(isMobile ? AppSpacing.md : AppSpacing.xl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'YouTube Music Playlists',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Browse your playlists, compare tracks with locker uploads, and sync missing songs via yt-dlp',
-                      style: TextStyle(color: Colors.grey[400], fontSize: 13),
-                    ),
-                  ],
+            AppPageHeader(
+              title: 'YTM PLAYLISTS',
+              subtitle: 'Browse playlists, compare tracks with locker uploads, and replicate 1:1',
+              kicker: 'CLOUD PLAYLIST COLLECTIONS',
+              actions: [
+                if (_replicatedPlaylists.isNotEmpty)
+                  OutlinedButton.icon(
+                    onPressed: _showAllReplicasDialog,
+                    icon: const Icon(Icons.sync_alt, size: 16, color: AppColors.info),
+                    label: Text('Replicas (${_replicatedPlaylists.length})'),
+                  ),
+                OutlinedButton.icon(
+                  onPressed: _showImportPlaylistDialog,
+                  icon: const Icon(Icons.link, size: 16),
+                  label: const Text('Import URL'),
                 ),
-                Row(
-                  children: [
-                    if (_replicatedPlaylists.isNotEmpty) ...[
-                      OutlinedButton.icon(
-                        onPressed: _showAllReplicasDialog,
-                        icon: const Icon(Icons.sync_alt, size: 16, color: Colors.tealAccent),
-                        label: Text('Locker Replicas (${_replicatedPlaylists.length})', style: const TextStyle(color: Colors.tealAccent)),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.tealAccent.withValues(alpha: 0.4)),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                    OutlinedButton.icon(
-                      onPressed: _showImportPlaylistDialog,
-                      icon: const Icon(Icons.link, size: 16),
-                      label: const Text('Import Playlist URL'),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.blueAccent.withValues(alpha: 0.4)),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton.filledTonal(
-                      onPressed: _isLoading ? null : _loadPlaylists,
-                      icon: _isLoading
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.refresh),
-                      tooltip: 'Refresh Playlists',
-                    ),
-                  ],
+                OutlinedButton.icon(
+                  onPressed: _isLoading ? null : _loadPlaylists,
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Refresh'),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.md),
 
             // Search Bar
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'Search playlists...',
-                prefixIcon: const Icon(Icons.search, size: 20),
-                filled: true,
-                fillColor: const Color(0xFF181820),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-              onChanged: (val) {
-                setState(() => _searchQuery = val.trim());
-              },
+            AppSearchBar(
+              hintText: 'Search playlists by name or description...',
+              onChanged: (val) => setState(() => _searchQuery = val.trim()),
+              onClear: () => setState(() => _searchQuery = ''),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.md),
 
             // Content
             Expanded(
@@ -1189,86 +1156,86 @@ class _PlaylistsViewState extends State<PlaylistsView> {
   Widget _buildPlaylistsContent(List<YTMPlaylist> playlists) {
     if (_isLoading) {
       return const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(color: Color(0xFFFF0000)),
-            SizedBox(height: 16),
-            Text('Loading YouTube Music playlists...'),
-          ],
-        ),
+        child: AppLoadingState(message: 'Loading YouTube Music playlists...'),
       );
     }
 
     if (_errorMessage != null) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.amberAccent),
-            const SizedBox(height: 12),
-            Text(_errorMessage!, style: const TextStyle(color: Colors.amberAccent)),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadPlaylists,
-              child: const Text('Try Again'),
-            ),
-          ],
+        child: AppErrorState(
+          title: 'Failed to Load Playlists',
+          message: _errorMessage!,
+          onRetry: _loadPlaylists,
         ),
       );
     }
 
     if (playlists.isEmpty) {
       return Center(
-        child: Text(
-          _searchQuery.isEmpty ? 'No playlists found in your account.' : 'No playlists matched "$_searchQuery".',
-          style: TextStyle(color: Colors.grey[500]),
+        child: AppEmptyState(
+          icon: Icons.playlist_play,
+          title: 'No Playlists Found',
+          description: _searchQuery.isEmpty
+              ? 'No playlists found in your YouTube Music account.'
+              : 'No playlists matched "$_searchQuery".',
+          actionLabel: _searchQuery.isNotEmpty ? 'Clear Search' : null,
+          onAction: _searchQuery.isNotEmpty ? () => setState(() => _searchQuery = '') : null,
         ),
       );
     }
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = (constraints.maxWidth / 220).floor().clamp(2, 6);
+        final crossAxisCount = (constraints.maxWidth / 240).floor().clamp(2, 6);
         return GridView.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 0.78,
+            crossAxisSpacing: AppSpacing.md,
+            mainAxisSpacing: AppSpacing.md,
+            childAspectRatio: 0.8,
           ),
           itemCount: playlists.length,
           itemBuilder: (context, index) {
             final p = playlists[index];
             final isLikedMusic = p.id == 'LM';
+            final hasActiveReplica = _replicatedPlaylists.any((r) => r.sourcePlaylistId == p.id);
 
             return InkWell(
               onTap: () => _selectPlaylist(p),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppRadius.card,
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF181820),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppColors.surfaceElevated,
+                  borderRadius: AppRadius.card,
                   border: Border.all(
-                    color: isLikedMusic ? const Color(0xFFFF0000).withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.05),
+                    color: isLikedMusic
+                        ? AppColors.primaryLight.withValues(alpha: 0.4)
+                        : (hasActiveReplica
+                            ? AppColors.info.withValues(alpha: 0.4)
+                            : AppColors.borderSubtle),
+                    width: (isLikedMusic || hasActiveReplica) ? 1.5 : 1.0,
                   ),
                 ),
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.sm),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Cover Thumbnail
                     Expanded(
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: AppRadius.rSm,
                         child: Container(
                           width: double.infinity,
-                          color: const Color(0xFF22222E),
+                          color: AppColors.surface,
                           child: isLikedMusic
                               ? Container(
                                   decoration: const BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [Color(0xFF8A2387), Color(0xFFE94057), Color(0xFFF27121)],
+                                      colors: [
+                                        Color(0xFF8A2387),
+                                        Color(0xFFE94057),
+                                        Color(0xFFF27121),
+                                      ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
@@ -1277,77 +1244,95 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                                     child: Icon(Icons.thumb_up, color: Colors.white, size: 40),
                                   ),
                                 )
-                              : (p.thumbnail != null
+                              : (p.thumbnail != null && p.thumbnail!.isNotEmpty
                                   ? Image.network(
                                       p.thumbnail!,
                                       fit: BoxFit.cover,
                                       errorBuilder: (_, _, _) => const Center(
-                                        child: Icon(Icons.music_note, color: Colors.grey, size: 36),
+                                        child: Icon(
+                                          Icons.music_note,
+                                          color: AppColors.textSecondary,
+                                          size: 36,
+                                        ),
                                       ),
                                     )
                                   : const Center(
-                                      child: Icon(Icons.playlist_play, color: Colors.grey, size: 40),
+                                      child: Icon(
+                                        Icons.playlist_play,
+                                        color: AppColors.textSecondary,
+                                        size: 40,
+                                      ),
                                     )),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: AppSpacing.sm),
 
                     // Title
                     Text(
                       p.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: AppTypography.label.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                     const SizedBox(height: 4),
 
-                    // Track count or subtitle
+                    // Track count & badges
                     Row(
                       children: [
                         if (isLikedMusic)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFF0000).withValues(alpha: 0.2),
+                              color: AppColors.primaryMuted,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Auto Playlist',
-                              style: TextStyle(color: Color(0xFFFF4E4E), fontSize: 10, fontWeight: FontWeight.bold),
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.primaryLight,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 10,
+                              ),
                             ),
                           )
                         else if (p.trackCount != null)
                           Text(
                             '${p.trackCount} tracks',
-                            style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                            style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
                           )
                         else
                           Text(
                             'Playlist',
-                            style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                            style: AppTypography.caption.copyWith(color: AppColors.textMuted),
                           ),
-                        if (_replicatedPlaylists.any((r) => r.sourcePlaylistId == p.id)) ...[
-                          const SizedBox(width: 6),
+                        const Spacer(),
+                        if (hasActiveReplica)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF00897B).withValues(alpha: 0.2),
+                              color: AppColors.infoBg,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.sync, size: 10, color: Color(0xFF4DB6AC)),
-                                SizedBox(width: 3),
+                                const Icon(Icons.sync, size: 10, color: AppColors.info),
+                                const SizedBox(width: 3),
                                 Text(
-                                  'Replica Active',
-                                  style: TextStyle(color: Color(0xFF4DB6AC), fontSize: 10, fontWeight: FontWeight.bold),
+                                  'Replica',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.info,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
                       ],
                     ),
                   ],
@@ -1361,10 +1346,10 @@ class _PlaylistsViewState extends State<PlaylistsView> {
   }
 
   Widget _buildPlaylistDetailsView() {
+    final isMobile = ResponsiveLayout.isMobile(context);
     final playlist = _selectedPlaylist!;
     final details = _playlistDetails;
 
-    // Filter tracks
     List<YTMPlaylistTrack> displayedTracks = [];
     int localCount = 0;
     int uploadsCount = 0;
@@ -1392,14 +1377,14 @@ class _PlaylistsViewState extends State<PlaylistsView> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(isMobile ? AppSpacing.md : AppSpacing.xl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Bar with Back Button and Sync Actions
+            // Top Bar
             Row(
               children: [
-                IconButton.filledTonal(
+                IconButton(
                   onPressed: () {
                     setState(() {
                       _selectedPlaylist = null;
@@ -1409,84 +1394,62 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                   icon: const Icon(Icons.arrow_back),
                   tooltip: 'Back to Playlists',
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        playlist.title,
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (playlist.description.isNotEmpty)
-                        Text(
-                          playlist.description,
-                          style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                  child: AppPageHeader(
+                    title: playlist.title,
+                    subtitle: playlist.description.isNotEmpty
+                        ? playlist.description
+                        : '${details?.tracks.length ?? 0} tracks in playlist',
+                    kicker: 'PLAYLIST DETAILS',
+                    actions: [
+                      if (missingFromUploadsCount > 0)
+                        ElevatedButton.icon(
+                          onPressed: isSyncRunning ? null : _syncMissingTracks,
+                          icon: const Icon(Icons.cloud_sync, size: 16),
+                          label: Text(
+                            isSyncRunning
+                                ? 'Syncing...'
+                                : 'Upload Missing ($missingFromUploadsCount)',
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                          ),
                         ),
+                      if (_currentReplicaConfig != null)
+                        OutlinedButton.icon(
+                          onPressed: () => _openReplicationModal(_currentReplicaConfig!),
+                          icon: const Icon(Icons.sync_alt, size: 16, color: AppColors.info),
+                          label: const Text('Manage Replica'),
+                        )
+                      else
+                        OutlinedButton.icon(
+                          onPressed: () => _openCreateReplicaDialog(playlist),
+                          icon: const Icon(Icons.copy_all, size: 16),
+                          label: const Text('Make Replica'),
+                        ),
+                      IconButton(
+                        onPressed: () => _selectPlaylist(playlist, refresh: true),
+                        icon: const Icon(Icons.refresh, size: 18),
+                        tooltip: 'Refresh Playlist',
+                      ),
                     ],
                   ),
                 ),
-                if (missingFromUploadsCount > 0) ...[
-                  ElevatedButton.icon(
-                    onPressed: isSyncRunning ? null : _syncMissingTracks,
-                    icon: const Icon(Icons.cloud_sync, size: 16),
-                    label: Text(isSyncRunning ? 'Syncing...' : 'Download & Upload Missing ($missingFromUploadsCount)'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF8A2387),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                if (_currentReplicaConfig != null) ...[
-                  ElevatedButton.icon(
-                    onPressed: () => _openReplicationModal(_currentReplicaConfig!),
-                    icon: const Icon(Icons.sync_alt, size: 16),
-                    label: const Text('Locker Replica (Active)'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00897B),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ] else ...[
-                  ElevatedButton.icon(
-                    onPressed: () => _openCreateReplicaDialog(playlist),
-                    icon: const Icon(Icons.copy_all, size: 16),
-                    label: const Text('Make Locker Replica'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0288D1),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                if (!_isLoadingDetails)
-                  IconButton.filledTonal(
-                    onPressed: () => _selectPlaylist(playlist, refresh: true),
-                    icon: const Icon(Icons.refresh, size: 18),
-                    tooltip: 'Refresh Playlist & Sync Uploads',
-                  ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
-            // Sync Progress Banner (when active)
+            // Active Sync Banner
             if (isSyncRunning) ...[
               Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: Colors.purple.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.purpleAccent.withValues(alpha: 0.4)),
+                  color: AppColors.infoBg,
+                  borderRadius: AppRadius.card,
+                  border: Border.all(color: AppColors.info.withValues(alpha: 0.4)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1499,12 +1462,18 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                             const SizedBox(
                               width: 14,
                               height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purpleAccent),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.info,
+                              ),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: AppSpacing.sm),
                             Text(
                               'Downloading & Uploading: ${_syncStatus!.completedTracks}/${_syncStatus!.totalTracks} tracks',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.purpleAccent),
+                              style: AppTypography.label.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.info,
+                              ),
                             ),
                           ],
                         ),
@@ -1513,9 +1482,9 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                           children: [
                             Text(
                               '${(_syncStatus!.progress * 100).toInt()}%',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                              style: AppTypography.label.copyWith(fontWeight: FontWeight.bold),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: AppSpacing.sm),
                             InkWell(
                               onTap: () async {
                                 try {
@@ -1532,26 +1501,28 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                                 } catch (e) {
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Failed to cancel: $e'), backgroundColor: Colors.redAccent),
+                                      SnackBar(
+                                        content: Text('Failed to cancel: $e'),
+                                        backgroundColor: AppColors.error,
+                                      ),
                                     );
                                   }
                                 }
                               },
                               borderRadius: BorderRadius.circular(4),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.withValues(alpha: 0.2),
+                                  color: AppColors.errorBg,
                                   borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
+                                  border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
                                 ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.close, size: 12, color: Colors.redAccent),
-                                    SizedBox(width: 4),
-                                    Text('Cancel', style: TextStyle(fontSize: 11, color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                                  ],
+                                child: Text(
+                                  'Cancel',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.error,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
@@ -1563,54 +1534,135 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                       const SizedBox(height: 6),
                       Text(
                         'Processing: ${_syncStatus!.currentTrack}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[300]),
+                        style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(
-                      value: _syncStatus!.progress,
-                      backgroundColor: Colors.white10,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.purpleAccent),
+                    const SizedBox(height: AppSpacing.sm),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: _syncStatus!.progress,
+                        backgroundColor: AppColors.surface,
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.info),
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
 
-            // Summary Stats Cards
+            // Compact Playlist Status Summary (Section 19 of plan.md)
             if (details != null) ...[
-              Wrap(
-                spacing: 12,
-                runSpacing: 8,
-                children: [
-                  _buildFilterChip(
-                    label: 'All Tracks (${details.tracks.length})',
-                    filterKey: 'all',
-                    color: Colors.blueAccent,
+              Container(
+                margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: AppRadius.card,
+                  border: Border.all(color: AppColors.borderSubtle),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'PLAYLIST STATUS',
+                          style: AppTypography.caption.copyWith(
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.8,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        Text(
+                          '${details.tracks.isNotEmpty ? ((uploadsCount / details.tracks.length) * 100).toInt() : 100}% in Locker',
+                          style: AppTypography.caption.copyWith(
+                            color: missingFromUploadsCount == 0
+                                ? AppColors.success
+                                : AppColors.warning,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: details.tracks.isNotEmpty
+                            ? (uploadsCount / details.tracks.length).clamp(0.0, 1.0)
+                            : 1.0,
+                        minHeight: 6,
+                        backgroundColor: AppColors.surface,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          missingFromUploadsCount == 0 ? AppColors.success : AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Wrap(
+                      spacing: AppSpacing.md,
+                      children: [
+                        Text(
+                          '${details.tracks.length} total',
+                          style: AppTypography.caption.copyWith(color: AppColors.textPrimary),
+                        ),
+                        Text(
+                          '$uploadsCount in locker',
+                          style: AppTypography.caption.copyWith(color: AppColors.success),
+                        ),
+                        Text(
+                          '$localCount local',
+                          style: AppTypography.caption.copyWith(color: AppColors.info),
+                        ),
+                        Text(
+                          '$missingFromUploadsCount missing',
+                          style: AppTypography.caption.copyWith(
+                            color: missingFromUploadsCount > 0
+                                ? AppColors.warning
+                                : AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Filter Chips
+              AppFilterBar<String>(
+                options: [
+                  FilterOption(
+                    value: 'all',
+                    label: 'All Tracks',
+                    count: details.tracks.length,
                   ),
-                  _buildFilterChip(
-                    label: 'In Local Files ($localCount)',
-                    filterKey: 'local',
-                    color: Colors.greenAccent,
+                  FilterOption(
+                    value: 'local',
+                    label: 'In Local Files',
+                    count: localCount,
                   ),
-                  _buildFilterChip(
-                    label: 'In Cloud Locker ($uploadsCount)',
-                    filterKey: 'uploads',
-                    color: Colors.purpleAccent,
+                  FilterOption(
+                    value: 'uploads',
+                    label: 'In Cloud Locker',
+                    count: uploadsCount,
                   ),
-                  _buildFilterChip(
-                    label: 'Streaming Only ($streamingCount)',
-                    filterKey: 'missing',
-                    color: Colors.grey,
+                  FilterOption(
+                    value: 'missing',
+                    label: 'Streaming Only',
+                    count: streamingCount,
                   ),
                 ],
+                selectedValue: _trackFilter,
+                onSelected: (val) => setState(() => _trackFilter = val),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
             ],
 
-            // Tracks Table
+            // Tracks Table / List
             Expanded(
               child: _buildPlaylistTracksContent(displayedTracks),
             ),
@@ -1620,104 +1672,80 @@ class _PlaylistsViewState extends State<PlaylistsView> {
     );
   }
 
-  Widget _buildFilterChip({required String label, required String filterKey, required Color color}) {
-    final isSelected = _trackFilter == filterKey;
-    return FilterChip(
-      selected: isSelected,
-      label: Text(
-        label,
-        style: TextStyle(
-          color: isSelected ? Colors.white : Colors.grey[300],
-          fontSize: 12,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      backgroundColor: const Color(0xFF181820),
-      selectedColor: color.withValues(alpha: 0.3),
-      side: BorderSide(color: isSelected ? color : Colors.white.withValues(alpha: 0.1)),
-      onSelected: (_) {
-        setState(() => _trackFilter = filterKey);
-      },
-    );
-  }
-
   Widget _buildPlaylistTracksContent(List<YTMPlaylistTrack> tracks) {
     if (_isLoadingDetails) {
       return const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(color: Color(0xFFFF0000)),
-            SizedBox(height: 16),
-            Text('Fetching playlist tracks & comparing with local library...'),
-          ],
+        child: AppLoadingState(
+          message: 'Fetching playlist tracks and comparing with locker uploads...',
         ),
       );
     }
 
     if (_detailsErrorMessage != null) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.amberAccent),
-            const SizedBox(height: 12),
-            Text(_detailsErrorMessage!, style: const TextStyle(color: Colors.amberAccent)),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => _selectPlaylist(_selectedPlaylist!),
-              child: const Text('Try Again'),
-            ),
-          ],
+        child: AppErrorState(
+          title: 'Failed to Load Playlist Tracks',
+          message: _detailsErrorMessage!,
+          onRetry: () => _selectPlaylist(_selectedPlaylist!),
         ),
       );
     }
 
     if (tracks.isEmpty) {
       return Center(
-        child: Text(
-          _trackFilter == 'all' ? 'This playlist is empty.' : 'No tracks match the selected filter.',
-          style: TextStyle(color: Colors.grey[500]),
+        child: AppEmptyState(
+          icon: Icons.music_off,
+          title: 'No Tracks',
+          description: _trackFilter == 'all'
+              ? 'This playlist has no songs.'
+              : 'No tracks match the selected filter "$_trackFilter".',
         ),
       );
     }
 
-    return Card(
-      color: const Color(0xFF14141A),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadius.card,
+        border: Border.all(color: AppColors.borderSubtle),
+      ),
       child: ListView.separated(
         itemCount: tracks.length,
-        separatorBuilder: (_, _) => const Divider(height: 1, color: Color(0xFF22222E)),
+        separatorBuilder: (_, _) => const Divider(height: 1, color: AppColors.borderSubtle),
         itemBuilder: (context, index) {
           final track = tracks[index];
-          final isDownloadingThis = track.videoId != null && _downloadingVideoIds.contains(track.videoId);
+          final isDownloadingThis =
+              track.videoId != null && _downloadingVideoIds.contains(track.videoId);
 
           return ListTile(
             leading: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: AppRadius.rSm,
               child: SizedBox(
                 width: 44,
                 height: 44,
-                child: track.thumbnail != null
+                child: track.thumbnail != null && track.thumbnail!.isNotEmpty
                     ? Image.network(
                         track.thumbnail!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const Icon(Icons.music_note, color: Colors.grey),
+                        errorBuilder: (_, _, _) => const Icon(
+                          Icons.music_note,
+                          color: AppColors.textSecondary,
+                        ),
                       )
-                    : const Icon(Icons.music_note, color: Colors.grey),
+                    : const Icon(Icons.music_note, color: AppColors.textSecondary),
               ),
             ),
             title: Text(
               track.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              style: AppTypography.label.copyWith(fontWeight: FontWeight.w600),
             ),
             subtitle: Text(
               '${track.displayArtist} • ${track.displayAlbum}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: Colors.grey[400], fontSize: 12),
+              style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -1729,16 +1757,23 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.greenAccent.withValues(alpha: 0.15),
+                        color: AppColors.successBg,
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
+                        border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.folder_outlined, size: 12, color: Colors.greenAccent),
+                          Icon(Icons.folder_outlined, size: 12, color: AppColors.success),
                           SizedBox(width: 4),
-                          Text('In Local Files', style: TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                          Text(
+                            'Local',
+                            style: TextStyle(
+                              color: AppColors.success,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1747,28 +1782,38 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withValues(alpha: 0.1),
+                      color: AppColors.surfaceElevated,
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Text('Missing Local', style: TextStyle(color: Colors.grey[400], fontSize: 11)),
+                    child: const Text(
+                      'No Local',
+                      style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+                    ),
                   ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
 
                 // Uploads Badge / Action
                 if (track.inUploads)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.purpleAccent.withValues(alpha: 0.15),
+                      color: AppColors.infoBg,
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Colors.purpleAccent.withValues(alpha: 0.5)),
+                      border: Border.all(color: AppColors.info.withValues(alpha: 0.4)),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.cloud_done_outlined, size: 12, color: Colors.purpleAccent),
+                        Icon(Icons.cloud_done_outlined, size: 12, color: AppColors.info),
                         SizedBox(width: 4),
-                        Text('In Uploads', style: TextStyle(color: Colors.purpleAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                        Text(
+                          'Locker',
+                          style: TextStyle(
+                            color: AppColors.info,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                   )
@@ -1776,23 +1821,26 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                   const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purpleAccent),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
                   )
                 else
                   OutlinedButton.icon(
                     onPressed: () => _downloadAndUploadSingleTrack(track),
-                    icon: const Icon(Icons.cloud_upload_outlined, size: 13, color: Colors.purpleAccent),
-                    label: const Text('Download & Upload', style: TextStyle(fontSize: 11, color: Colors.purpleAccent)),
+                    icon: const Icon(Icons.cloud_upload_outlined, size: 13, color: AppColors.primary),
+                    label: const Text(
+                      'Download & Upload',
+                      style: TextStyle(fontSize: 11, color: AppColors.primary),
+                    ),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      side: BorderSide(color: Colors.purpleAccent.withValues(alpha: 0.5)),
+                      side: const BorderSide(color: AppColors.primary),
                     ),
                   ),
 
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Text(
                   track.formattedDuration,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  style: AppTypography.caption.copyWith(color: AppColors.textMuted),
                 ),
               ],
             ),
