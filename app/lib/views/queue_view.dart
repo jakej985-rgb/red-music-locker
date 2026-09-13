@@ -1,7 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../core/responsive/responsive_layout.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_radius.dart';
+import '../core/theme/app_spacing.dart';
+import '../core/theme/app_typography.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
+import '../shared/widgets/shared_widgets.dart';
 import 'components/metadata_editor_dialog.dart';
 
 class QueueView extends StatefulWidget {
@@ -68,14 +74,22 @@ class _QueueViewState extends State<QueueView> {
       final count = await apiService.uploadAllMissing();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Enqueued $count missing local tracks')),
+          SnackBar(
+            content: Text('Enqueued $count missing local tracks'),
+            backgroundColor: AppColors.surfaceElevated,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
         _loadQueue();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }
@@ -85,12 +99,19 @@ class _QueueViewState extends State<QueueView> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surfaceElevated,
         title: const Text('Cancel Active Tasks?'),
         content: const Text('This will cancel any active playlist sync or download and clear queued upload jobs.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Back')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Back'),
+          ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Cancel Tasks'),
           ),
@@ -103,14 +124,22 @@ class _QueueViewState extends State<QueueView> {
         await apiService.cancelAllQueue();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Active tasks cancelled')),
+            const SnackBar(
+              content: Text('Active tasks cancelled'),
+              backgroundColor: AppColors.surfaceElevated,
+              behavior: SnackBarBehavior.floating,
+            ),
           );
           _loadQueue();
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to cancel: $e'), backgroundColor: Colors.redAccent),
+            SnackBar(
+              content: Text('Failed to cancel: $e'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
           );
         }
       }
@@ -122,14 +151,22 @@ class _QueueViewState extends State<QueueView> {
       await apiService.clearCompletedQueue();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cleared finished task history')),
+          const SnackBar(
+            content: Text('Cleared finished task history'),
+            backgroundColor: AppColors.surfaceElevated,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
         _loadQueue();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }
@@ -142,7 +179,11 @@ class _QueueViewState extends State<QueueView> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }
@@ -151,16 +192,16 @@ class _QueueViewState extends State<QueueView> {
   Color _getCategoryColor(String category) {
     switch (category) {
       case 'needs_help':
-        return Colors.amberAccent;
+        return AppColors.warning;
       case 'metadata_change':
         return Colors.orangeAccent;
       case 'download':
-        return Colors.cyanAccent;
+        return AppColors.info;
       case 'local_upload':
-        return Colors.greenAccent;
+        return AppColors.success;
       case 'upload':
       default:
-        return Colors.blueAccent;
+        return AppColors.streaming;
     }
   }
 
@@ -198,6 +239,103 @@ class _QueueViewState extends State<QueueView> {
     }
   }
 
+  Widget _buildTelemetryGrid() {
+    final activeCount = _summary['active'] ?? (_isActive ? 1 : 0);
+    final helpCount = _summary['needs_help'] ?? 0;
+    final totalCount = _summary['all'] ?? _items.length;
+    final uploadCount = (_summary['upload'] ?? 0) + (_summary['local_upload'] ?? 0);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth < 600
+            ? 2
+            : constraints.maxWidth < 900
+                ? 4
+                : 4;
+
+        final cards = [
+          AppStatCard(
+            title: 'ACTIVE',
+            value: '$activeCount',
+            icon: Icons.play_circle_outline_rounded,
+            accentColor: activeCount > 0 ? AppColors.primary : AppColors.textMuted,
+            subtitle: activeCount > 0 ? 'Operations in flight' : 'Idle',
+            onTap: () {
+              setState(() => _activeCategory = 'all');
+              _loadQueue();
+            },
+          ),
+          AppStatCard(
+            title: 'ATTENTION',
+            value: '$helpCount',
+            icon: Icons.warning_amber_rounded,
+            accentColor: helpCount > 0 ? AppColors.warning : AppColors.textMuted,
+            subtitle: helpCount > 0 ? 'Action required' : 'None',
+            onTap: () {
+              setState(() => _activeCategory = 'needs_help');
+              _loadQueue();
+            },
+          ),
+          AppStatCard(
+            title: 'IN PIPELINE',
+            value: '$totalCount',
+            icon: Icons.layers_rounded,
+            accentColor: AppColors.info,
+            subtitle: 'Queued operations',
+            onTap: () {
+              setState(() => _activeCategory = 'all');
+              _loadQueue();
+            },
+          ),
+          AppStatCard(
+            title: 'UPLOADS',
+            value: '$uploadCount',
+            icon: Icons.cloud_upload_outlined,
+            accentColor: AppColors.streaming,
+            subtitle: 'Cloud sync queue',
+            onTap: () {
+              setState(() => _activeCategory = 'upload');
+              _loadQueue();
+            },
+          ),
+        ];
+
+        if (crossAxisCount == 2) {
+          return Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(child: cards[0]),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(child: cards[1]),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(child: cards[2]),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(child: cards[3]),
+                ],
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          children: cards
+              .map((c) => Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                      child: c,
+                    ),
+                  ))
+              .toList(),
+        );
+      },
+    );
+  }
+
   Widget _buildCategoryChip(String key) {
     final isSelected = _activeCategory == key;
     final count = _summary[key] ?? 0;
@@ -208,9 +346,7 @@ class _QueueViewState extends State<QueueView> {
       child: FilterChip(
         selected: isSelected,
         showCheckmark: false,
-        avatar: isSelected
-            ? null
-            : Icon(_getCategoryIcon(key), size: 16, color: color),
+        avatar: isSelected ? null : Icon(_getCategoryIcon(key), size: 16, color: color),
         label: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -218,14 +354,15 @@ class _QueueViewState extends State<QueueView> {
               _getCategoryLabel(key),
               style: TextStyle(
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? Colors.white : Colors.grey[300],
+                color: isSelected ? Colors.white : AppColors.textMuted,
+                fontSize: 13,
               ),
             ),
             const SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.white24 : Colors.black26,
+                color: isSelected ? Colors.white24 : AppColors.surfaceElevated,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -233,16 +370,16 @@ class _QueueViewState extends State<QueueView> {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: isSelected ? Colors.white : Colors.grey[400],
+                  color: isSelected ? Colors.white : AppColors.textMuted,
                 ),
               ),
             ),
           ],
         ),
-        backgroundColor: const Color(0xFF1E1E26),
-        selectedColor: color.withValues(alpha: 0.35),
+        backgroundColor: AppColors.surfaceSubtle,
+        selectedColor: color.withValues(alpha: 0.25),
         side: BorderSide(
-          color: isSelected ? color : Colors.white12,
+          color: isSelected ? color : AppColors.borderSubtle,
           width: isSelected ? 1.5 : 1,
         ),
         onSelected: (_) {
@@ -257,419 +394,360 @@ class _QueueViewState extends State<QueueView> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = ResponsiveLayout.isMobile(context);
     final totalCount = _summary[_activeCategory] ?? _items.length;
 
-    return Padding(
-      padding: const EdgeInsets.all(28.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Row
-          Row(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Queue',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(isMobile ? AppSpacing.md : AppSpacing.xl),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Page Header
+            AppPageHeader(
+              title: 'Queue',
+              kicker: 'OPERATIONS & PIPELINE',
+              subtitle: _activeDescription.isNotEmpty
+                  ? '$totalCount items • $_activeDescription'
+                  : '$totalCount items currently in pipeline',
+              actions: [
+                if (_isActive) ...[
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                      side: const BorderSide(color: AppColors.error),
+                      shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                    ),
+                    onPressed: _cancelAll,
+                    icon: const Icon(Icons.stop_circle_outlined, size: 18),
+                    label: const Text('Cancel Active'),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _activeDescription.isNotEmpty
-                        ? '$totalCount items • $_activeDescription'
-                        : '$totalCount items currently in pipeline',
-                    style: TextStyle(color: Colors.grey[400], fontSize: 13),
-                  ),
+                  const SizedBox(width: AppSpacing.sm),
                 ],
-              ),
-              const Spacer(),
-              if (_isActive) ...[
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.redAccent,
-                    side: const BorderSide(color: Colors.redAccent),
+                FilledButton.tonalIcon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.surfaceElevated,
+                    foregroundColor: AppColors.textPrimary,
+                    shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                   ),
-                  onPressed: _cancelAll,
-                  icon: const Icon(Icons.stop_circle_outlined, size: 18),
-                  label: const Text('Cancel Active'),
+                  onPressed: _clearFinished,
+                  icon: const Icon(Icons.cleaning_services_outlined, size: 18),
+                  label: const Text('Clear Finished'),
                 ),
-                const SizedBox(width: 8),
-              ],
-              FilledButton.tonalIcon(
-                onPressed: _clearFinished,
-                icon: const Icon(Icons.cleaning_services_outlined, size: 18),
-                label: const Text('Clear Finished'),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.tonalIcon(
-                onPressed: _enqueueMissing,
-                icon: const Icon(Icons.playlist_add, size: 18),
-                label: const Text('Add All Missing'),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                tooltip: 'Refresh Queue',
-                icon: const Icon(Icons.refresh),
-                onPressed: () => _loadQueue(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Active Activity Live Banner
-          if (_isActive && _activeDescription.isNotEmpty)
-            Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.deepPurple.withValues(alpha: 0.3),
-                    Colors.blue.withValues(alpha: 0.2),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.deepPurpleAccent.withValues(alpha: 0.4)),
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                const SizedBox(width: AppSpacing.sm),
+                FilledButton.tonalIcon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.surfaceElevated,
+                    foregroundColor: AppColors.textPrimary,
+                    shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      _activeDescription,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  onPressed: _enqueueMissing,
+                  icon: const Icon(Icons.playlist_add, size: 18),
+                  label: const Text('Add Missing'),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                IconButton(
+                  tooltip: 'Refresh Queue',
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () => _loadQueue(),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.surfaceElevated,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: AppRadius.button,
+                      side: BorderSide(color: AppColors.borderSubtle),
                     ),
                   ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // Top Telemetry Stats Cards
+            _buildTelemetryGrid(),
+            const SizedBox(height: AppSpacing.lg),
+
+            // Active Activity Live Banner
+            if (_isActive && _activeDescription.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withValues(alpha: 0.2),
+                      AppColors.streaming.withValues(alpha: 0.15),
+                    ],
+                  ),
+                  borderRadius: AppRadius.card,
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  children: [
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        _activeDescription,
+                        style: AppTypography.bodySm.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+
+            // Category Filter Chips
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildCategoryChip('all'),
+                  _buildCategoryChip('needs_help'),
+                  _buildCategoryChip('metadata_change'),
+                  _buildCategoryChip('download'),
+                  _buildCategoryChip('upload'),
+                  _buildCategoryChip('local_upload'),
                 ],
               ),
             ),
+            const SizedBox(height: AppSpacing.lg),
 
-          // Category Tabs Row: All, Metadata Change, Download, Upload, Local Upload
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildCategoryChip('all'),
-                _buildCategoryChip('needs_help'),
-                _buildCategoryChip('metadata_change'),
-                _buildCategoryChip('download'),
-                _buildCategoryChip('upload'),
-                _buildCategoryChip('local_upload'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
+            // Queue Items List
+            if (_isLoading && _items.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 60.0),
+                child: Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
+              )
+            else if (_items.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40.0),
+                child: AppEmptyState(
+                  icon: _getCategoryIcon(_activeCategory),
+                  title: 'Queue is Clear',
+                  description: _activeCategory == 'all'
+                      ? 'No active, queued, or recently completed tasks.'
+                      : 'No operations currently pending in ${_getCategoryLabel(_activeCategory)}.',
+                  actionLabel: 'Add All Missing Tracks',
+                  onAction: _enqueueMissing,
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _items.length,
+                separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
+                itemBuilder: (context, index) {
+                  final item = _items[index];
+                  final isInProgress = item.status == 'in_progress';
+                  final isCompleted = item.status == 'completed';
+                  final isFailed = item.status == 'failed';
+                  final isNeedsHelp = item.status == 'needs_help';
+                  final catColor = _getCategoryColor(item.category);
 
-          // Queue Items List
-          Expanded(
-            child: _isLoading && _items.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : _items.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              _getCategoryIcon(_activeCategory),
-                              size: 56,
-                              color: Colors.grey[700],
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceSubtle,
+                      borderRadius: AppRadius.card,
+                      border: Border.all(
+                        color: isInProgress
+                            ? catColor.withValues(alpha: 0.5)
+                            : isNeedsHelp
+                                ? AppColors.warning.withValues(alpha: 0.5)
+                                : isFailed
+                                    ? AppColors.error.withValues(alpha: 0.4)
+                                    : AppColors.borderSubtle,
+                        width: (isInProgress || isNeedsHelp) ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        // Item index
+                        SizedBox(
+                          width: 32,
+                          child: Text(
+                            '#${index + 1}',
+                            style: AppTypography.caption.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textMuted,
                             ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Queue is empty',
-                              style: TextStyle(color: Colors.grey[300], fontSize: 17, fontWeight: FontWeight.w600),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              _activeCategory == 'all'
-                                  ? 'No active, queued, or recently completed tasks.'
-                                  : 'No items in the ${_getCategoryLabel(_activeCategory)} category.',
-                              style: TextStyle(color: Colors.grey[500], fontSize: 13),
-                            ),
-                          ],
+                          ),
                         ),
-                      )
-                    : ListView.separated(
-                        itemCount: _items.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final item = _items[index];
-                          final isInProgress = item.status == 'in_progress';
-                          final isCompleted = item.status == 'completed';
-                          final isFailed = item.status == 'failed';
-                          final isNeedsHelp = item.status == 'needs_help';
-                          final catColor = _getCategoryColor(item.category);
 
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF181820),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: isInProgress
-                                    ? catColor.withValues(alpha: 0.5)
-                                    : isNeedsHelp
-                                        ? Colors.amberAccent.withValues(alpha: 0.5)
+                        // Thumbnail or category icon
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceElevated,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: item.thumbnail != null && item.thumbnail!.isNotEmpty
+                              ? Image.network(
+                                  item.thumbnail!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => Icon(
+                                    _getCategoryIcon(item.category),
+                                    color: catColor,
+                                    size: 22,
+                                  ),
+                                )
+                              : Icon(
+                                  _getCategoryIcon(item.category),
+                                  color: catColor,
+                                  size: 22,
+                                ),
+                        ),
+                        const SizedBox(width: 14),
+
+                        // Title, Artist & Album, Step, Source
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.h3,
+                              ),
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  if (item.artist != null && item.artist!.isNotEmpty)
+                                    Flexible(
+                                      child: Text(
+                                        item.artist!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTypography.bodySm.copyWith(
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  if (item.album != null && item.album!.isNotEmpty)
+                                    Text(
+                                      ' • ${item.album!}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTypography.bodySm.copyWith(
+                                        color: AppColors.textMuted,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              if (item.currentStep != null && item.currentStep!.isNotEmpty) ...[
+                                const SizedBox(height: 3),
+                                Text(
+                                  item.currentStep!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.caption.copyWith(
+                                    color: isInProgress
+                                        ? catColor
                                         : isFailed
-                                            ? Colors.redAccent.withValues(alpha: 0.4)
-                                            : Colors.white10,
-                                width: (isInProgress || isNeedsHelp) ? 1.5 : 1,
+                                            ? AppColors.error
+                                            : AppColors.textMuted,
+                                    fontWeight: isInProgress ? FontWeight.w600 : FontWeight.normal,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+
+                        // Source badge
+                        if (item.source != null && item.source!.isNotEmpty) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceElevated,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              item.source!,
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.textMuted,
                               ),
                             ),
-                            child: Row(
-                              children: [
-                                // Item index
-                                SizedBox(
-                                  width: 32,
-                                  child: Text(
-                                    '#${index + 1}',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey[500],
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
+                          ),
+                          const SizedBox(width: 12),
+                        ],
 
-                                // Thumbnail or category icon
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF22222E),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: item.thumbnail != null && item.thumbnail!.isNotEmpty
-                                      ? Image.network(
-                                          item.thumbnail!,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) => Icon(
-                                            _getCategoryIcon(item.category),
-                                            color: catColor,
-                                            size: 22,
-                                          ),
-                                        )
-                                      : Icon(
-                                          _getCategoryIcon(item.category),
-                                          color: catColor,
-                                          size: 22,
-                                        ),
-                                ),
-                                const SizedBox(width: 14),
-
-                                // Title, Artist & Album, Step, Source
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              item.title,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Row(
-                                        children: [
-                                          if (item.artist != null && item.artist!.isNotEmpty) ...[
-                                            Flexible(
-                                              child: Text(
-                                                item.artist!,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                                              ),
-                                            ),
-                                          ],
-                                          if (item.album != null && item.album!.isNotEmpty) ...[
-                                            Text(
-                                              ' • ${item.album!}',
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                      if (item.currentStep != null && item.currentStep!.isNotEmpty) ...[
-                                        const SizedBox(height: 3),
-                                        Text(
-                                          item.currentStep!,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: isInProgress
-                                                ? catColor
-                                                : isFailed
-                                                    ? Colors.redAccent
-                                                    : Colors.grey[500],
-                                            fontSize: 11,
-                                            fontWeight: isInProgress ? FontWeight.w500 : FontWeight.normal,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-
-                                // Source badge
-                                if (item.source != null && item.source!.isNotEmpty) ...[
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.05),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      item.source!,
-                                      style: TextStyle(color: Colors.grey[400], fontSize: 11),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                ],
-
-                                // Status Badge & Actions
-                                if (isNeedsHelp) ...[
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.amber.withValues(alpha: 0.2),
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(color: Colors.amberAccent.withValues(alpha: 0.4)),
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.help_outline_rounded, size: 14, color: Colors.amberAccent),
-                                        SizedBox(width: 6),
-                                        Text(
-                                          'Needs Help',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.amberAccent,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  FilledButton.tonalIcon(
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: Colors.amberAccent.withValues(alpha: 0.15),
-                                      foregroundColor: Colors.amberAccent,
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                    ),
-                                    onPressed: () async {
-                                      final videoId = item.videoId ?? item.id.replaceFirst('help_', '').replaceFirst('pl_help_', '');
-                                      final res = await MetadataEditorDialog.showForTrack(
-                                        context,
-                                        videoId: videoId,
-                                        title: item.title,
-                                        artist: item.artist,
-                                        album: item.album,
-                                        thumbnail: item.thumbnail,
-                                      );
-                                      if (res != null) {
-                                        _loadQueue();
-                                      }
-                                    },
-                                    icon: const Icon(Icons.search_rounded, size: 15),
-                                    label: const Text('Find Match', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  IconButton(
-                                    tooltip: 'Dismiss',
-                                    icon: const Icon(Icons.close_rounded, size: 16, color: Colors.white54),
-                                    onPressed: () {
-                                      final videoId = item.videoId ?? item.id.replaceFirst('help_', '').replaceFirst('pl_help_', '');
-                                      _dismissHelp(videoId);
-                                    },
-                                  ),
-                                ] else ...[
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: isInProgress
-                                          ? catColor.withValues(alpha: 0.18)
-                                          : isCompleted
-                                              ? Colors.green.withValues(alpha: 0.15)
-                                              : isFailed
-                                                  ? Colors.red.withValues(alpha: 0.18)
-                                                  : Colors.amber.withValues(alpha: 0.12),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        if (isInProgress) ...[
-                                          SizedBox(
-                                            width: 12,
-                                            height: 12,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: catColor,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                        ] else if (isCompleted) ...[
-                                          const Icon(Icons.check_circle_outline, size: 14, color: Colors.greenAccent),
-                                          const SizedBox(width: 6),
-                                        ] else if (isFailed) ...[
-                                          const Icon(Icons.error_outline, size: 14, color: Colors.redAccent),
-                                          const SizedBox(width: 6),
-                                        ] else ...[
-                                          Icon(Icons.schedule, size: 14, color: Colors.amber[300]),
-                                          const SizedBox(width: 6),
-                                        ],
-                                        Text(
-                                          isInProgress
-                                              ? 'Processing'
-                                              : isCompleted
-                                                  ? 'Done'
-                                                  : isFailed
-                                                      ? 'Failed'
-                                                      : 'Queued',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: isInProgress
-                                                ? catColor
-                                                : isCompleted
-                                                    ? Colors.greenAccent
-                                                    : isFailed
-                                                        ? Colors.redAccent
-                                                        : Colors.amber[300],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ],
+                        // Status Badge & Actions
+                        if (isNeedsHelp) ...[
+                          const AppStatusBadge(
+                            type: SyncStatusType.needsReview,
+                            customLabel: 'Needs Help',
+                          ),
+                          const SizedBox(width: 8),
+                          FilledButton.tonalIcon(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.warning.withValues(alpha: 0.15),
+                              foregroundColor: AppColors.warning,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                             ),
-                          );
-                        },
-                      ),
-          ),
-        ],
+                            onPressed: () async {
+                              final videoId = item.videoId ?? item.id.replaceFirst('help_', '').replaceFirst('pl_help_', '');
+                              final res = await MetadataEditorDialog.showForTrack(
+                                context,
+                                videoId: videoId,
+                                title: item.title,
+                                artist: item.artist,
+                                album: item.album,
+                                thumbnail: item.thumbnail,
+                              );
+                              if (res != null) {
+                                _loadQueue();
+                              }
+                            },
+                            icon: const Icon(Icons.search_rounded, size: 15),
+                            label: const Text('Find Match', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
+                          const SizedBox(width: 4),
+                          IconButton(
+                            tooltip: 'Dismiss',
+                            icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.textMuted),
+                            onPressed: () {
+                              final videoId = item.videoId ?? item.id.replaceFirst('help_', '').replaceFirst('pl_help_', '');
+                              _dismissHelp(videoId);
+                            },
+                          ),
+                        ] else ...[
+                          AppStatusBadge.fromString(
+                            isInProgress
+                                ? 'syncing'
+                                : isCompleted
+                                    ? 'uploaded'
+                                    : isFailed
+                                        ? 'failed'
+                                        : 'pending',
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
       ),
     );
   }
