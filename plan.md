@@ -1,1163 +1,2007 @@
-# YTM Sync — Family Mode and Multi-Account Addendum
+# Red Music Locker — UI/UX Modernization Implementation Plan
 
-## 1. Goal
+## 1. Objective
 
-Extend the multi-user architecture with an optional **Family** feature that allows multiple YTM Sync accounts to be managed together in one interface.
+Modernize the Red Music Locker Flutter application into a polished, fast, dark-first music-management application while preserving all existing functionality.
 
-Family Mode should make it easy to:
+The redesign should make the application feel like:
 
-* See multiple connected YouTube Music accounts in one window.
-* Quickly switch between family members.
-* Upload a song to one selected account.
-* Upload the same song to multiple selected accounts.
-* See which account owns a playlist or upload.
-* Run sync operations for one account or multiple family accounts.
-* Keep every user's credentials and private data isolated.
+- A premium music library
+- A reliable synchronization dashboard
+- A powerful personal music locker
+- A multi-account YT Music management tool
 
-Family Mode must **not** weaken the security boundaries between individual users.
+The application should NOT become a generic admin dashboard or a Spotify clone.
 
----
+The primary user workflow remains:
 
-# 2. Family Architecture
-
-The architecture should become:
-
-```text
-YTM Sync
-│
-├── Users
-│   ├── User A
-│   │   └── YouTube Music Account A
-│   │
-│   ├── User B
-│   │   └── YouTube Music Account B
-│   │
-│   └── User C
-│       └── YouTube Music Account C
-│
-└── Families
-    └── Family 1
-        ├── User A
-        ├── User B
-        └── User C
-```
-
-A Family is a **grouping and authorization layer**.
-
-It is not a shared authentication account.
-
----
-
-# 3. Family Model
-
-Create a family entity:
-
-```text
-Family
-├── id
-├── name
-├── owner_user_id
-├── created_at
-└── updated_at
-```
-
-Example:
-
-```text
-Family
-├── id: family_001
-├── name: Johnson Family
-└── owner: user_001
-```
-
----
-
-# 4. Family Membership
-
-Create a membership model:
-
-```text
-FamilyMember
-├── id
-├── family_id
-├── user_id
-├── role
-├── created_at
-└── status
-```
-
-Roles should initially be:
-
-```text
-OWNER
-ADMIN
-MEMBER
-```
-
-Optional future role:
-
-```text
-CHILD
-```
-
-Do not implement unnecessary child-account restrictions unless they are actually required.
-
----
-
-# 5. Family Permissions
-
-Family membership must determine what another family member can see or do.
-
-Recommended initial behavior:
-
-### OWNER
-
-Can:
-
-* manage family,
-* invite members,
-* remove members,
-* see family members,
-* see family account connection status,
-* use Family Mode,
-* upload to permitted family accounts.
-
-### ADMIN
-
-Can:
-
-* see family members,
-* use Family Mode,
-* upload to permitted family accounts,
-* manage normal family settings.
-
-### MEMBER
-
-Can:
-
-* see permitted family accounts,
-* use Family Mode,
-* upload where permission is granted.
-
-The permission model must be explicit.
-
-Do not assume:
-
-```text
-same family = full access to everything
-```
-
----
-
-# 6. YouTube Music Account Visibility
-
-A family member should be able to choose whether their YouTube Music account is visible to the family.
-
-Example:
-
-```text
-Family visibility
-
-[✓] Show my YouTube Music account in Family Mode
-[✓] Allow family uploads to my account
-[ ] Allow family members to see my playlists
-```
-
-This creates separate permissions for:
-
-* account visibility,
-* upload access,
-* playlist visibility,
-* sync visibility.
-
----
-
-# 7. Important Privacy Rule
-
-**Family membership does not automatically grant access to private YTM data.**
-
-For example:
-
-```text
-Dad
-  │
-  └── YouTube Music
-       ├── Private playlists
-       ├── Uploads
-       └── Sync state
-```
-
-Mom should not automatically receive access to all of Dad's playlists merely because they are in the same Family.
-
-Family Mode should only expose information explicitly allowed by the account owner.
-
----
-
-# 8. Family Dashboard
-
-Create a Family dashboard that displays connected accounts.
-
-Example:
-
-```text
-┌──────────────────────────────────────────────┐
-│ Johnson Family                               │
-├──────────────────────────────────────────────┤
-│                                              │
-│  👤 Dad                                      │
-│  YouTube Music        ✓ Connected            │
-│  Uploads: 243                                 │
-│                                              │
-│  👤 Mom                                      │
-│  YouTube Music        ✓ Connected            │
-│  Uploads: 118                                 │
-│                                              │
-│  👤 Charles                                  │
-│  YouTube Music        ✓ Connected            │
-│  Uploads: 42                                  │
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-Only information permitted by the member's privacy settings should be displayed.
-
----
-
-# 9. Account Selector
-
-Create a reusable account selector throughout the application.
-
-Example:
-
-```text
-YouTube Music Account
-
-┌─────────────────────────────────────┐
-│ 👤 Dad                              │
-│    Connected ✓                      │
-├─────────────────────────────────────┤
-│ 👤 Mom                              │
-│    Connected ✓                      │
-├─────────────────────────────────────┤
-│ 👤 Charles                          │
-│    Connected ✓                      │
-└─────────────────────────────────────┘
-```
-
-This should become the standard way to choose a YTM account.
-
----
-
-# 10. Upload Destination Selector
-
-The upload screen must allow the user to choose where the upload goes.
-
-Example:
-
-```text
-Upload Music
-────────────────────────────────
-
-Files
-  My Song.mp3
-  Another Song.mp3
-
-Upload to:
-
-☑ Dad — YouTube Music
-☐ Mom — YouTube Music
-☐ Charles — YouTube Music
-
-[ Upload ]
-```
-
-The default should be the currently selected account.
-
----
-
-# 11. Single-Account Upload
-
-If the user selects one account:
-
-```text
-☑ Dad
-☐ Mom
-☐ Charles
-```
-
-the file is uploaded only to Dad's YouTube Music account.
-
-The backend must use:
-
-```text
-selected_ytm_account_id
-```
-
-to determine the destination.
-
-It must **not** trust a client-provided user ID without validating permissions.
-
----
-
-# 12. Multi-Account Upload
-
-Allow the user to select multiple permitted accounts:
-
-```text
-☑ Dad
-☑ Mom
-☐ Charles
-```
-
-The system creates independent upload jobs:
-
-```text
-Upload
-│
-├── Job → Dad
-└── Job → Mom
-```
-
-Each job must use that account's:
-
-* authentication,
-* YTMusic client,
-* upload state,
-* error handling.
-
----
-
-# 13. Never Reuse Authentication Between Accounts
-
-This is critical.
-
-For:
-
-```text
-☑ Dad
-☑ Mom
-```
-
-the application must perform:
-
-```text
-Dad upload
-    ↓
-Dad's YTMusic client
-    ↓
-Dad's authentication
-
-Mom upload
-    ↓
-Mom's YTMusic client
-    ↓
-Mom's authentication
-```
-
-Never:
-
-```text
-One global YTMusic client
+    Local Music
         ↓
-switch account
-```
+    Red Music Locker
+        ↓
+    Match / Verify
+        ↓
+    YouTube Music Upload
+        ↓
+    Playlist Replication
+        ↓
+    Continuous Synchronization
 
-This prevents accidental cross-account uploads.
-
----
-
-# 14. Upload Job Model
-
-Expand the upload job model:
-
-```text
-UploadJob
-├── id
-├── family_id
-├── requested_by_user_id
-├── destination_user_id
-├── youtube_music_account_id
-├── file_id
-├── status
-├── progress
-├── error
-├── created_at
-├── started_at
-└── completed_at
-```
-
-This makes the destination explicit.
+The UI should make this workflow obvious.
 
 ---
 
-# 15. Upload Authorization
+# 2. Critical Safety Rules
 
-Before starting an upload:
+Before making any changes:
 
-```text
-Current User
-      ↓
-Is user allowed to upload to destination?
-      ↓
-YES
-      ↓
-Is destination YTM account connected?
-      ↓
-YES
-      ↓
-Create upload job
-```
+## DO NOT
 
-Reject if:
+- Rewrite backend APIs
+- Rewrite YT Music authentication
+- Rewrite OAuth flows
+- Rewrite upload matching logic
+- Rewrite playlist synchronization logic
+- Rewrite family/multi-account backend behavior
+- Change database schemas unless absolutely required
+- Remove existing functionality because it is not currently represented well visually
+- Replace working state management with a different framework
+- Remove existing API models
+- Change API endpoints
+- Change authentication tokens or credential handling
+- Change Docker configuration
+- Change deployment configuration
+- Remove existing tests
+- Delete existing pages simply because they are being redesigned
 
-* destination account doesn't exist,
-* destination account isn't connected,
-* destination user isn't in the family,
-* destination user has disabled family uploads,
-* requesting user lacks permission,
-* authentication is invalid.
+## MUST
+
+- Preserve existing functionality
+- Preserve existing routes
+- Preserve existing API contracts
+- Preserve existing state-management architecture unless a specific UI problem requires refactoring
+- Make UI changes incrementally
+- Run formatting/analyzer/tests after each major phase
+- Keep commits logically separated
+- Verify desktop and mobile layouts
+- Verify existing sync functionality after UI changes
 
 ---
 
-# 16. Upload Confirmation
+# 3. First Step — Repository Baseline
 
-When uploading to another person's account, make the destination obvious.
+Before changing code:
+
+1. Inspect the complete repository.
+2. Identify:
+   - Flutter entry point
+   - routing
+   - providers/controllers
+   - API clients
+   - models
+   - services
+   - views
+   - reusable widgets
+   - theme
+   - authentication
+   - account handling
+   - playlist synchronization
+   - upload queue
+   - history
+3. Run:
+
+    flutter pub get
+    flutter analyze
+    flutter test
+
+4. Record the current result.
+
+Create:
+
+    docs/ui-redesign/baseline.md
+
+Document:
+
+- analyzer result
+- test result
+- existing routes
+- existing pages
+- existing providers
+- existing major widgets
+- known warnings/errors
+
+Do not fix unrelated issues during this step.
+
+---
+
+# 4. Create UI Architecture
+
+Create a shared UI architecture instead of continuing to put large amounts of UI-specific logic inside individual pages.
+
+Recommended structure:
+
+    lib/
+      core/
+        theme/
+        navigation/
+        responsive/
+        widgets/
+
+      features/
+        dashboard/
+        library/
+        uploads/
+        playlists/
+        queue/
+        history/
+        family/
+        settings/
+
+      shared/
+        widgets/
+        models/
+        utils/
+
+Use the existing architecture where possible.
+
+Do not blindly move every existing file.
+
+Refactor only where it improves maintainability.
+
+---
+
+# 5. Design System
+
+Create a centralized Red Music Locker design system.
+
+Recommended:
+
+    lib/core/theme/
+
+Files:
+
+    app_theme.dart
+    app_colors.dart
+    app_spacing.dart
+    app_radius.dart
+    app_typography.dart
+
+## Color direction
+
+Base:
+
+    Background:
+    #0B0B0F
+
+    Surface:
+    #141419
+
+    Elevated Surface:
+    #1C1C23
+
+    Primary:
+    Red
+
+    Primary emphasis:
+    Bright red
+
+    Primary text:
+    White
+
+    Secondary text:
+    Gray
+
+Use the existing brand colors if already defined.
+
+Do not duplicate literal colors throughout widgets.
+
+Instead:
+
+    Theme.of(context).colorScheme
+
+or centralized design constants.
+
+---
+
+# 6. Spacing System
+
+Create standardized spacing values.
 
 Example:
 
-```text
-Upload to:
+    xs = 4
+    sm = 8
+    md = 12
+    lg = 16
+    xl = 24
+    xxl = 32
 
-⚠️ Dad's YouTube Music account
+Use consistent:
 
-2 songs will be uploaded.
+- card padding
+- page margins
+- section spacing
+- list spacing
+- dialog spacing
 
-[ Cancel ]    [ Upload ]
-```
-
-For multiple accounts:
-
-```text
-Upload to:
-
-✓ Dad
-✓ Mom
-✗ Charles — Family uploads disabled
-
-2 upload jobs will be created.
-
-[ Cancel ]    [ Upload ]
-```
-
-This prevents accidental uploads to the wrong account.
+Avoid every screen inventing its own padding.
 
 ---
 
-# 17. Family Upload History
+# 7. Border Radius
 
-Family Mode should provide a combined upload history where permitted.
+Create consistent radii.
 
 Example:
 
-```text
-Recent Family Uploads
+    small = 8
+    medium = 12
+    large = 16
+    pill = 999
 
-Song                 Destination      Status
-------------------------------------------------
-My Song              Dad               ✓
-My Song              Mom               ✓
-New Track            Dad               ✓
-New Track            Mom               Failed
-```
+Use:
 
-The history should clearly identify:
+- 12–16px cards
+- pill buttons/badges
+- smaller radius for controls
 
-* source file,
-* destination account,
-* requesting user,
-* status,
-* error,
-* timestamp.
+Avoid excessive rounded UI.
 
 ---
 
-# 18. Family Sync
+# 8. Typography
 
-Family Mode should eventually support:
+Create a hierarchy:
 
-```text
-Sync
-├── This Account
-└── Family
-```
+## Display
 
-### This Account
+Dashboard greeting / major page heading.
 
-Sync only the currently selected user's YTM account.
+## Heading
 
-### Family
+Section titles.
 
-Run permitted sync jobs for all family accounts.
+## Body
+
+Track metadata and descriptions.
+
+## Label
+
+Status badges and secondary information.
+
+## Caption
+
+Timestamps and technical information.
+
+Prioritize readability over decorative typography.
+
+---
+
+# 9. Shared Components
+
+Create reusable components before redesigning every page.
+
+Recommended:
+
+    AppPageHeader
+    AppSectionHeader
+    AppSearchBar
+    AppFilterBar
+    AppStatCard
+    AppStatusBadge
+    AppTrackRow
+    AppTrackGrid
+    AppPlaylistCard
+    AppAccountCard
+    AppActivityItem
+    AppProgressCard
+    AppSelectionToolbar
+    AppEmptyState
+    AppLoadingState
+    AppErrorState
+    AppConfirmDialog
+    AppBottomStatusBar
+
+These components must be generic enough to work across pages.
+
+---
+
+# 10. Status Badge System
+
+Create standard statuses.
+
+Examples:
+
+    Uploaded
+    Local Only
+    Matched
+    Needs Review
+    Failed
+    Duplicate
+    Syncing
+    Pending
+    Streaming Only
+
+Each status should have:
+
+- icon
+- text
+- semantic meaning
+- consistent visual treatment
+
+Do not rely solely on color.
+
+Every status must remain understandable if the user cannot distinguish colors.
+
+---
+
+# 11. Responsive Navigation
+
+The existing desktop navigation should remain.
+
+Desktop:
+
+    NavigationRail / NavigationDrawer
+
+Mobile:
+
+    BottomNavigationBar / NavigationBar
+
+Desktop primary navigation:
+
+    Home
+    Library
+    Uploads
+    Playlists
+    Queue
+    History
+
+Secondary:
+
+    Family
+    Settings
+
+Mobile primary navigation:
+
+    Home
+    Library
+    Uploads
+    Playlists
+    More
+
+More contains:
+
+    Queue
+    History
+    Family
+    Settings
+
+Do not cram the desktop navigation onto mobile.
+
+---
+
+# 12. Global Account Selector
+
+Make the active YT Music account visible throughout the application.
+
+Desktop:
+
+    [ Account Avatar ] Jake ▼
+
+Mobile:
+
+    Jake ▼
+
+Selector should show:
+
+    Jake
+    Michaela
+    Other accounts
+    Family
+
+If supported by the existing backend, show:
+
+    Personal
+    Family
+    Connection status
+
+Do not change account-management behavior.
+
+This is only a UI improvement.
+
+---
+
+# 13. Global Sync Status
+
+Add a persistent compact status indicator.
 
 Example:
 
-```text
-Family Sync
+    ● YTM Connected
+    ↑ 17 uploading
+    ✓ Synced 4m ago
 
-Dad       ✓ Complete
-Mom       ✓ Complete
-Charles   ⏳ Syncing
-```
+This can live:
 
-A failure for one account must not stop the others.
+- in the desktop app shell
+- at the bottom of the navigation
+- or as a compact mobile header/status area
+
+It should use existing state.
+
+Do not create a second sync engine.
 
 ---
 
-# 19. Family Playlist Visibility
+# 14. Dashboard Redesign
 
-Playlist visibility should be independently configurable.
+File:
+
+    dashboard_view.dart
+
+Convert the dashboard into a "Locker Status" command center.
+
+## Header
+
+Show:
+
+    Good morning/afternoon/evening
+
+    MUSIC LOCKER
+
+    Short explanation of current state.
+
+## Primary statistics
+
+Show:
+
+    Local Tracks
+    Uploaded
+    Missing
+    Sync %
 
 Example:
 
-```text
-Family Sharing
+    1,284
+    Local Tracks
 
-YouTube Music Account
-[✓] Show account in family
-[✓] Allow family uploads
-[✓] Show playlists
-[ ] Allow playlist modification
-```
+    1,127
+    Uploaded
 
-Initially, recommend:
+    157
+    Missing
 
-```text
-View playlist
-```
+    93%
+    Synced
 
-before allowing:
+Use existing data.
 
-```text
-Modify playlist
-```
+Do not invent statistics.
+
+## Primary action
+
+Large:
+
+    SYNC NOW
+
+Secondary actions:
+
+    Scan Library
+    Upload Missing
+    Manage Playlists
+
+## Recent activity
+
+Display:
+
+    Recent uploads
+    Playlist reconciliation
+    Library scans
+    Match issues
+
+## Attention section
+
+Only display when action is required.
+
+Examples:
+
+    7 tracks need review
+    3 uploads failed
+    2 playlists need reconciliation
+
+Button:
+
+    Review
+
+The dashboard should answer:
+
+1. Is everything okay?
+2. What is happening?
+3. Does the user need to do anything?
 
 ---
 
-# 20. Family Playlist Operations
+# 15. Music Library Redesign
 
-When the future playlist system is implemented, every operation must specify its destination account.
+File:
+
+    library_view.dart
+
+Make this the primary music-management experience.
+
+## Header
+
+    MUSIC LIBRARY
+
+    1,284 tracks
+
+## Search
+
+Persistent search:
+
+    Search music...
+
+Search should search using existing backend/state functionality.
+
+Do not create a duplicate search engine.
+
+## Filters
+
+Provide:
+
+    All
+    Uploaded
+    Missing
+    Needs Review
+    Failed
+
+## View switcher
+
+    Grid
+    List
+
+Persist the user's preferred view if practical.
+
+## Grid
+
+Album artwork.
+
+Display:
+
+    artwork
+    track title
+    artist
+    album
+    status
+
+## List
+
+Columns:
+
+    Selection
+    Artwork
+    Track
+    Artist
+    Album
+    Status
+    Actions
+
+## Selection
+
+When tracks are selected:
+
+    157 selected
+
+    Upload
+    Edit Metadata
+    Remove
+    More
+
+Replace the normal toolbar with the selection toolbar.
+
+## Track interaction
+
+Clicking a track opens:
+
+    Track Details
+
+Potential contents:
+
+    Artwork
+    Title
+    Artist
+    Album
+    Metadata
+    Local path
+    Upload state
+    YTM state
+    Playlist membership
+
+Reuse existing metadata editor functionality.
+
+---
+
+# 16. YTM Uploads Redesign
+
+File:
+
+    uploads_view.dart
+
+Purpose:
+
+Show what exists in YT Music and the upload state.
+
+## Header
+
+    YOUTUBE MUSIC
+
+    1,127 uploaded tracks
+
+    Last synchronized: 4 minutes ago
+
+## Connection status
+
+Display active account.
 
 Example:
 
-```text
-Create Playlist
+    ● Connected
+    Jake's YouTube Music
 
-Playlist name:
-My Family Playlist
+## Filters
 
-Account:
-[ Dad ▼ ]
+    All
+    Recently Uploaded
+    Needs Metadata
+    Duplicates
+    Failed
 
-Source:
-☑ Uploaded songs only
+## Track list
 
-[ Create Playlist ]
-```
+Display:
 
-For multiple accounts:
+    Artwork
+    Track
+    Artist
+    Album
+    Upload date
+    Status
+    Actions
 
-```text
-Create playlist on:
+## Upload state
 
-☑ Dad
-☑ Mom
-☐ Charles
-```
+Use shared status badges.
 
-Each account receives an independent operation.
+## Bulk selection
+
+Support existing bulk operations.
+
+Do not alter upload behavior.
 
 ---
 
-# 21. Family Account Switcher
+# 17. Playlist Page Redesign
 
-The application should provide a persistent account selector.
+File:
+
+    playlists_view.dart
+
+This should receive significant visual attention.
+
+## Playlist overview
+
+Show playlist cards.
+
+Each card:
+
+    Artwork collage
+    Playlist name
+    Track count
+    Locker count
+    Missing count
+    Sync state
 
 Example:
 
-```text
-┌─────────────────────────┐
-│ Active Account           │
-│                          │
-│ 👤 Dad                   │
-│ ✓ YouTube Music         │
-│                          │
-│ ▼ Switch account         │
-└─────────────────────────┘
-```
+    Workout
 
-Options:
+    84 tracks
+    79 in locker
+    5 missing
 
-```text
-Dad
-Mom
-Charles
-──────────────
-Family
-```
+    ● Synced
 
-Selecting **Family** activates the multi-account dashboard.
+## Search
 
----
+    Search playlists...
 
-# 22. Family Mode vs Personal Mode
+## Filters
 
-The application should have two conceptual modes:
+    All
+    Synced
+    Needs Attention
+    Watching
+    Not Watching
 
-```text
-PERSONAL
-    ↓
-One user's YTM account
-
-FAMILY
-    ↓
-Multiple permitted family accounts
-```
-
-Personal mode remains the default.
-
-Family Mode is opt-in.
+Only expose filters supported by actual application state.
 
 ---
 
-# 23. Family API
+# 18. Playlist Detail Page
 
-Add endpoints along the lines of:
+Separate playlist overview from track management.
 
-```text
-POST   /api/families
-GET    /api/families
-GET    /api/families/{family_id}
-PATCH  /api/families/{family_id}
-DELETE /api/families/{family_id}
+Header:
 
-POST   /api/families/{family_id}/members
-DELETE /api/families/{family_id}/members/{user_id}
+    WORKOUT
 
-GET    /api/families/{family_id}/accounts
-PATCH  /api/families/{family_id}/members/{user_id}/permissions
-```
+    84 tracks
 
-Account-selection endpoints:
+    79 uploaded
+    5 missing
 
-```text
-GET /api/accounts
-GET /api/accounts/{account_id}
-```
+Actions:
 
-Upload endpoints should accept a destination account ID:
+    Sync Now
+    Manage Replica
+    More
 
-```text
-POST /api/uploads
-```
+Filters:
 
-with the server validating that the current user is allowed to use that destination.
+    All
+    Locker
+    Missing
+    Streaming Only
 
----
-
-# 24. Never Trust Destination IDs
-
-A malicious client could attempt:
-
-```json
-{
-  "destination_user_id": "someone_else"
-}
-```
-
-or:
-
-```json
-{
-  "youtube_music_account_id": "another_account"
-}
-```
-
-The backend must verify:
-
-```text
-Current User
-      ↓
-Family membership
-      ↓
-Destination account
-      ↓
-Permission
-```
-
-before doing anything.
-
----
-
-# 25. Family Database Relationships
-
-Recommended relationships:
-
-```text
-User
- │
- ├── YouTubeMusicAccount
- │
- └── FamilyMembership
-          │
-          ↓
-        Family
-          │
-          ├── FamilyMember
-          ├── FamilyMember
-          └── FamilyMember
-```
-
-Uploads:
-
-```text
-UploadJob
- ├── requested_by_user_id
- ├── destination_user_id
- ├── youtube_music_account_id
- └── family_id
-```
-
-This clearly separates:
-
-**Who requested it**
-
-from:
-
-**Where it goes.**
-
----
-
-# 26. Security Rules
-
-Family Mode must enforce all of the following:
-
-* [x] Users cannot access families they don't belong to.
-* [x] Users cannot add themselves to arbitrary families.
-* [x] Users cannot see accounts hidden from them.
-* [x] Users cannot upload to accounts that disallow family uploads.
-* [x] Users cannot modify another user's permissions.
-* [x] Users cannot access another user's credentials.
-* [x] Users cannot access another user's private playlists.
-* [x] Users cannot access another user's private sync state.
-* [x] Users cannot construct arbitrary destination account IDs.
-* [x] Destination accounts are validated server-side.
-* [x] Upload jobs record both requester and destination.
-
----
-
-# 27. Family Invitations
-
-Add a family invitation system.
+Track list should clearly indicate where each track exists.
 
 Example:
 
-```text
-Family
-  ↓
-Invite Member
-  ↓
-Invitation
-  ↓
-User accepts
-  ↓
-FamilyMember created
-```
+    ✓ Local
+    ✓ Locker
+    ⚠ Missing
 
-Invitation tokens must be:
-
-* random,
-* short-lived,
-* single-use,
-* invalidated after acceptance.
-
-Do not expose internal family IDs as invitation secrets.
+This is important because the application's playlist replication behavior depends on locker-only tracks.
 
 ---
 
-# 28. Family Removal
+# 19. Playlist Sync Visualization
 
-When removing a family member:
-
-```text
-Remove Charles from Family?
-```
-
-Removing a member must **not**:
-
-* delete their YTM account,
-* delete their YTM Sync account,
-* delete their uploads,
-* delete their playlists,
-* delete their authentication.
-
-It should only remove the family relationship.
-
----
-
-# 29. Leaving a Family
-
-A normal member should be able to:
-
-```text
-Leave Family
-```
-
-The user's personal account remains intact.
-
-Their YTM Music connection remains intact.
-
-Their personal data remains intact.
-
-Only the family relationship is removed.
-
----
-
-# 30. Family Owner Transfer
-
-Allow the owner to transfer ownership.
+Add a compact synchronization summary.
 
 Example:
 
-```text
-Transfer Family Ownership
+    PLAYLIST STATUS
 
-Transfer ownership to:
-[ Mom ▼ ]
+    84 total
 
-[ Cancel ] [ Transfer ]
-```
+    █████████████████░░ 94%
 
-Require explicit confirmation.
+    79 available in locker
+    5 missing
 
----
+    Last reconciliation:
+    4 minutes ago
 
-# 31. Family Deletion
+Use existing sync state.
 
-Deleting a family must **not delete users**.
-
-It should only delete:
-
-* family,
-* memberships,
-* family permissions,
-* family invitations.
-
-Individual user accounts and YTM accounts remain intact.
+Do not calculate misleading percentages.
 
 ---
 
-# 32. Family UI Safety
+# 20. Queue Redesign
 
-Always display the destination account prominently.
+File:
 
-Avoid ambiguous buttons such as:
+    queue_view.dart
 
-```text
-Upload
-```
+Make Queue a live operations page.
+
+Header:
+
+    UPLOAD QUEUE
+
+Statistics:
+
+    Active
+    Waiting
+    Completed
+    Failed
+
+## Active
+
+Show:
+
+    Artwork
+    Track
+    Artist
+    Operation
+    Progress
+    Current state
+
+Example:
+
+    Uploading
+
+    █████████████░░░ 82%
+
+## Waiting
+
+Show queued tracks.
+
+## Failed
+
+Give each failure:
+
+    Error summary
+    Retry
+
+## Bulk controls
+
+    Retry Failed
+    Clear Completed
+    Pause
+    Resume
+
+Only expose controls that already exist in application logic.
+
+---
+
+# 21. Queue Navigation Indicator
+
+Display pending queue count beside Queue.
+
+Example:
+
+    Queue
+    17
+
+Use existing queue state.
+
+Do not poll excessively.
+
+Use existing reactive state.
+
+---
+
+# 22. Sync History Redesign
+
+File:
+
+    history_view.dart
+
+Convert history into a timeline/activity interface.
+
+Filters:
+
+    All
+    Uploads
+    Playlists
+    Scans
+    Errors
+
+Timeline:
+
+    13:42
+    ✓ Upload completed
+    Artist — Song
+
+    13:38
+    ✓ Playlist reconciled
+    Workout — 84 tracks
+
+    13:20
+    ⚠ Match requires review
+
+Each item should support:
+
+    View Details
+
+Details can show:
+
+    timestamp
+    operation
+    account
+    item
+    result
+    error
+    relevant metadata
+
+Do not remove historical data.
+
+---
+
+# 23. Family Mode Redesign
+
+File:
+
+    family_view.dart
+
+Make account management visually obvious.
+
+Header:
+
+    FAMILY MUSIC LOCKER
+
+    3 connected accounts
+
+## Account cards
+
+Each account card:
+
+    Avatar
+    Name
+    Connection state
+    Upload count
+    Playlist count
+
+Action:
+
+    Manage
+
+## Account management
+
+Show:
+
+    Connection
+    Permissions
+    Upload destination
+    Playlist behavior
+
+Preserve existing account functionality.
+
+---
+
+# 24. Family Upload Destination
+
+This should be one of the clearest workflows.
+
+When uploading:
+
+    UPLOAD DESTINATION
+
+    Where should this music go?
+
+    ● Jake
+    ○ Michaela
+    ○ Account 3
+
+Or:
+
+    ☑ Jake
+    ☑ Michaela
+    ☐ Account 3
+
+If multiple accounts are selected, clearly display:
+
+    Uploading to 2 accounts
+
+Do not change backend upload semantics.
+
+---
+
+# 25. Account Destination Preview
+
+Before a multi-account upload, show:
+
+    UPLOAD DESTINATION
+
+    Track:
+    Artist — Song
+
+    Targets:
+
+    ✓ Jake
+    ✓ Michaela
+
+    2 accounts
+
+    [Cancel]
+    [Upload]
+
+This reduces accidental uploads to the wrong account.
+
+---
+
+# 26. Settings Redesign
+
+File:
+
+    settings_view.dart
+
+Break the large settings page into logical groups.
+
+## Account
+
+    YouTube Music
+    Accounts
+    Family Mode
+
+## Library
+
+    Music folders
+    Scanning
+    Metadata
+    Artwork
+
+## Uploads
+
+    Upload behavior
+    Verification
+    Retry behavior
+    Concurrency
+
+## Playlists
+
+    Playlist watching
+    Replica behavior
+    Synchronization
+
+## System
+
+    API
+    Database
+    Logs
+    Diagnostics
+
+Do not change the actual settings.
+
+Only reorganize their presentation.
+
+---
+
+# 27. Settings Components
+
+Create reusable setting widgets:
+
+    SettingsSection
+    SettingsTile
+    SettingsToggle
+    SettingsDropdown
+    SettingsValueTile
+    SettingsDangerTile
+
+Example:
+
+    UPLOAD BEHAVIOR
+
+    Automatic Uploads
+    Automatically upload new music
+                              ON
+
+    Verify Uploads
+    Verify tracks after upload
+                              ON
+
+Keep settings visually simple.
+
+---
+
+# 28. Search
+
+Add global search if existing backend capabilities support it.
+
+Search categories:
+
+    Tracks
+    Artists
+    Albums
+    Playlists
+
+Example:
+
+    "Metallica"
+
+Results:
+
+    TRACKS
+    Enter Sandman
+    Nothing Else Matters
+
+    ALBUMS
+    Metallica
+
+    PLAYLISTS
+    Metal Favorites
+
+Do not build a large search infrastructure if it isn't needed for MVP.
+
+A local client-side search over loaded data is acceptable initially.
+
+---
+
+# 29. Empty States
+
+Every major page needs a useful empty state.
+
+Examples:
+
+## Empty Library
+
+    Your music locker is empty.
+
+    Add a music folder to get started.
+
+    [Add Music Folder]
+
+## Empty Playlists
+
+    No YT Music playlists found.
+
+    Connect an account and sync playlists.
+
+## Empty Queue
+
+    Everything is caught up.
+
+    No uploads are waiting.
+
+## Empty History
+
+    No sync activity yet.
+
+Empty states should explain:
+
+- what happened
+- why the page is empty
+- what the user can do next
+
+---
+
+# 30. Loading States
+
+Avoid blank screens.
+
+Use:
+
+- skeleton rows
+- skeleton cards
+- progress indicators
+- meaningful loading text
+
+Example:
+
+    Loading your music library...
+
+Do not show a spinner indefinitely without context.
+
+---
+
+# 31. Error States
+
+Create a consistent error component.
+
+Example:
+
+    Couldn't load playlists.
+
+    The YouTube Music connection may have expired.
+
+    [Retry]
+
+For technical errors:
+
+    Details ▼
+
+Do not expose raw stack traces by default.
+
+Allow technical details behind an expandable section.
+
+---
+
+# 32. Dialog Redesign
+
+Audit:
+
+    metadata_editor_dialog.dart
+
+and all other dialogs.
+
+Dialogs should:
+
+- have consistent width
+- have consistent padding
+- have clear titles
+- use primary action on the right
+- avoid excessive fields on one screen
+- use sections when dialogs are large
+
+For very large dialogs, convert to a full-screen responsive page on mobile.
+
+---
+
+# 33. Metadata Editor
+
+Improve visual grouping.
+
+Sections:
+
+    BASIC INFORMATION
+
+    Title
+    Artist
+    Album
+    Album Artist
+
+    TRACK INFORMATION
+
+    Track #
+    Disc #
+    Genre
+    Year
+
+    ARTWORK
+
+    Artwork preview
+    Replace artwork
+
+    YT MUSIC
+
+    Matching status
+    Upload status
+
+Use existing metadata functionality.
+
+Do not change the underlying model.
+
+---
+
+# 34. Responsive Rules
+
+Desktop:
+
+    max content width where appropriate
+    multi-column cards
+    navigation rail
+
+Tablet:
+
+    reduced columns
+    collapsible navigation
+
+Mobile:
+
+    bottom navigation
+    single-column layout
+    full-width cards
+    horizontal filter scrolling
+    full-screen dialogs where needed
+
+Minimum target:
+
+    360px width
+
+Verify at:
+
+    360
+    390
+    430
+    768
+    1024
+    1440+
+
+---
+
+# 35. Accessibility
+
+Ensure:
+
+- buttons have semantic labels
+- icons aren't the only way to understand an action
+- adequate contrast
+- keyboard navigation where applicable
+- focus states
+- tooltips for unfamiliar icons
+- status information is not color-only
+- touch targets are sufficiently large
+
+---
+
+# 36. Performance
+
+Red Music Locker should remain fast.
+
+Avoid:
+
+- unnecessary animations
+- excessive blur
+- large shader effects
+- animated backgrounds
+- rebuilding the entire library for one track update
+- loading every artwork image simultaneously
+- unnecessary network requests
 
 Prefer:
 
-```text
-Upload to Dad
-```
-
-or:
-
-```text
-Upload to 2 accounts
-```
-
-This is especially important when the same song is being uploaded to multiple accounts.
+- lazy lists
+- lazy grids
+- cached artwork
+- const widgets
+- selective provider watching
+- pagination where already supported
+- existing caching mechanisms
 
 ---
 
-# 33. Multi-Account Upload Queue
+# 37. Artwork Handling
 
-The queue should group jobs by destination.
+Artwork should become a major visual component.
 
-Example:
+Use:
 
-```text
-Upload Queue
+- square artwork
+- consistent aspect ratio
+- placeholder artwork
+- rounded corners
+- lazy loading
 
-My Song.mp3
- ├── Dad       ✓ Complete
- ├── Mom       ⏳ Uploading
- └── Charles   — Not permitted
+Do not load full-resolution artwork when thumbnails are sufficient.
 
-Another Song.mp3
- ├── Dad       ⏳ Waiting
- └── Mom       ✓ Complete
-```
+For lists, use small thumbnails.
 
-Each destination gets its own status.
+For detail pages, use larger artwork.
 
 ---
 
-# 34. Duplicate Handling Per Account
+# 38. Desktop Library Density
 
-Duplicate detection must be performed independently per destination account.
+Desktop users should be able to manage large libraries efficiently.
 
-Example:
+Provide:
 
-```text
-My Song.mp3
+- compact list mode
+- multi-select
+- keyboard-friendly interaction
+- sorting
+- filtering
+- search
 
-Dad:
-✓ Already uploaded
+Recommended sort options:
 
-Mom:
-⬆ Uploading
+    Title
+    Artist
+    Album
+    Date Added
+    Upload Status
 
-Charles:
-✗ Family uploads disabled
-```
-
-Never assume that because a song exists in Dad's account it exists in Mom's account.
-
----
-
-# 35. Family Playlist Planning
-
-The planned uploaded-song-only playlist functionality should integrate with Family Mode.
-
-Example:
-
-```text
-Create / Watch Playlist
-
-Playlist:
-Family Uploads
-
-Account:
-[ Mom ▼ ]
-
-Source:
-● Uploaded songs only
-
-```
-
-For Family Mode:
-
-```text
-Accounts:
-
-☑ Dad
-☑ Mom
-☐ Charles
-```
-
-The application creates/maintains the playlist independently on each selected YouTube Music account.
+Only expose sorting supported by available data.
 
 ---
 
-# 36. Family-Aware Background Jobs
+# 39. Mobile Library
 
-Every background job must include:
+Mobile list rows should prioritize:
 
-```text
-requested_by_user_id
-destination_user_id
-youtube_music_account_id
-family_id
-```
+    Artwork
+    Title
+    Artist
+    Status
 
-Example:
+Secondary metadata can be hidden.
 
-```text
-Family playlist sync
-       ↓
-Dad playlist sync
-       ↓
-Mom playlist sync
-       ↓
-Charles playlist sync
-```
+Swipe gestures should NOT be required for important actions.
 
-One account failing must not affect the others.
+Use:
+
+    ⋮
+
+for secondary actions.
 
 ---
 
-# 37. Family Security Testing
+# 40. Navigation State
 
-Add tests for:
+Ensure the current page is always visually obvious.
 
-### Membership
+Selected navigation item:
 
-* [x] Member can access their family.
-* [x] Non-member cannot access family.
-* [x] Member cannot modify family ownership.
-* [x] Member cannot add unauthorized users.
+    icon
+    label
+    accent indicator
 
-### Account visibility
+Do not use excessive red.
 
-* [x] Hidden YTM account is invisible.
-* [x] Visible account is shown.
-* [x] Family upload permission is enforced.
-
-### Uploads
-
-* [x] User can upload to own account.
-* [x] User can upload to permitted family account.
-* [x] User cannot upload to restricted family account.
-* [x] User cannot upload to non-family account.
-* [x] Destination account cannot be spoofed.
-
-### Privacy
-
-* [x] Private playlist remains private.
-* [x] Private sync state remains private.
-* [x] Authentication remains private.
-* [x] User cannot retrieve another user's credentials.
+Red should communicate selection/action.
 
 ---
 
-# 38. Family Integration Test
+# 41. Animation
 
-Create a complete mocked workflow:
+Use subtle animations only.
 
-```text
-Dad
- ├── YTM Account A
- │
-Mom
- ├── YTM Account B
- │
-Charles
- └── YTM Account C
+Allowed:
 
+- page transitions
+- selection changes
+- progress changes
+- card hover
+- expandable sections
+
+Avoid:
+
+- constant motion
+- animated backgrounds
+- unnecessary particle effects
+- excessive scaling
+
+Target:
+
+    fast
+    responsive
+    stable
+
+---
+
+# 42. Dark Mode
+
+Red Music Locker should remain dark-first.
+
+Ensure:
+
+- cards aren't pure black against black
+- surfaces have subtle hierarchy
+- dividers are subtle
+- red isn't overused
+
+Hierarchy:
+
+    Background
         ↓
-
-Johnson Family
-
+    Surface
         ↓
-
-Dad uploads song
-
+    Elevated Surface
         ↓
-
-Select:
-☑ Dad
-☑ Mom
-
-        ↓
-
-Create two upload jobs
-
-        ↓
-
-Dad → YTMusic A
-Mom → YTMusic B
-
-        ↓
-
-Charles receives nothing
-```
-
-Then verify:
-
-```text
-Dad cannot access Mom's credentials.
-Mom cannot access Dad's credentials.
-Charles cannot access either account unless permitted.
-```
+    Modal / Dialog
 
 ---
 
-# 39. Definition of Done — Family Mode
+# 43. Light Mode
 
-Family Mode is complete when:
+If light mode already exists, keep it functional.
 
-* [x] Families can be created.
-* [x] Users can be invited.
-* [x] Users can join families.
-* [x] Users can leave families.
-* [x] Owners can remove members.
-* [x] Family ownership can be transferred.
-* [x] Families can be deleted without deleting users.
-* [x] Multiple YTM accounts can be displayed together.
-* [x] Account visibility can be controlled.
-* [x] Family upload permissions can be controlled.
-* [x] Upload destination can be selected.
-* [x] Multiple upload destinations can be selected.
-* [x] Each destination gets an independent upload job.
-* [x] Each upload uses the correct YTM authentication.
-* [x] Duplicate detection is per account.
-* [x] Upload history identifies destination.
-* [x] Family sync works independently per account.
-* [x] Family playlist functionality is account-aware.
-* [x] Private user data remains private.
-* [x] Cross-family access is blocked.
-* [x] Cross-user authentication access is blocked.
-* [x] Security tests pass.
-* [x] Docker/reverse-proxy testing passes.
+Do not design light mode independently from scratch.
+
+Map the same semantic colors:
+
+    background
+    surface
+    elevated
+    primary
+    error
+    warning
+    success
+
+Ensure all new widgets work in both modes.
 
 ---
 
-# 40. Final Architecture
+# 44. Component Extraction
 
-The target architecture should ultimately look like:
+Large views must be progressively decomposed.
 
-```text
-                         YTM Sync
-                            │
-              ┌─────────────┴─────────────┐
-              │                           │
-          Personal                     Family
-              │                           │
-              │                    ┌──────┴──────┐
-              │                    │             │
-            User                 Dad           Mom
-              │                    │             │
-              │              YTM Account A   YTM Account B
-              │                    │             │
-              │                    │             │
-              └──────────────┬─────┴─────────────┘
-                             │
-                        Upload Manager
-                             │
-                  ┌──────────┴──────────┐
-                  │                     │
-             Upload Job A          Upload Job B
-                  │                     │
-             YTMusic A              YTMusic B
-                  │                     │
-             Dad account             Mom account
-```
+Prioritize:
 
-## Core Design Principle
+    playlists_view.dart
+    family_view.dart
+    settings_view.dart
+    metadata_editor_dialog.dart
 
-**The person making the request and the account receiving the operation are separate concepts.**
+Move repeated sections into reusable widgets.
 
-For every operation, especially uploads:
+Do not create hundreds of tiny files.
 
-```text
-requested_by_user
-        +
-destination_ytm_account
-        +
-authorization
-        ↓
-operation
-```
+Extract when a component:
 
-This allows YTM Sync to support:
+- is reused
+- has its own state
+- is visually complex
+- is independently testable
+- makes the parent page easier to understand
 
-* personal accounts,
-* family accounts,
-* multiple YTM accounts in one window,
-* uploading to another family member's account,
-* uploading to several accounts at once,
+---
 
-while keeping authentication and private data isolated.
+# 45. State Management Rules
+
+Existing Riverpod/state-management implementation should remain.
+
+Widgets should consume state rather than directly duplicating business logic.
+
+Avoid:
+
+    API request
+    parse response
+    mutate unrelated state
+    build UI
+
+all inside one build method.
+
+Prefer:
+
+    Provider/Controller
+          ↓
+    View Model / State
+          ↓
+    UI
+
+Do not rewrite functioning providers merely for style.
+
+---
+
+# 46. API Boundary
+
+The UI redesign must not change API contracts.
+
+Existing:
+
+    services
+    repositories
+    API clients
+
+remain authoritative.
+
+UI components should consume their existing data.
+
+If the UI requires data that does not currently exist:
+
+1. Determine whether it can be derived locally.
+2. If not, document the requirement.
+3. Only then consider a backend/API change.
+
+Do not silently modify API behavior.
+
+---
+
+# 47. Testing Strategy
+
+Add widget tests for shared components.
+
+At minimum test:
+
+    AppStatusBadge
+    AppTrackRow
+    AppPlaylistCard
+    AppStatCard
+    AppSearchBar
+    AppSelectionToolbar
+    AppEmptyState
+    AppErrorState
+
+Test responsive behavior where practical.
+
+---
+
+# 48. Page-Level Testing
+
+For each page verify:
+
+## Dashboard
+
+- loads
+- statistics appear
+- Sync Now works
+- activity appears
+- attention items appear
+
+## Library
+
+- loads tracks
+- search works
+- filters work
+- grid works
+- list works
+- selection works
+- existing metadata editor opens
+
+## Uploads
+
+- account state appears
+- uploads display
+- filters work
+- existing actions work
+
+## Playlists
+
+- playlists load
+- cards display
+- playlist details open
+- tracks display
+- sync works
+- replica behavior remains intact
+
+## Queue
+
+- active jobs display
+- progress updates
+- retry works
+- completed items display
+
+## History
+
+- events display
+- filters work
+- details open
+
+## Family
+
+- accounts display
+- account switching works
+- upload destinations work
+- multi-account functionality remains intact
+
+## Settings
+
+- all existing settings remain functional
+
+---
+
+# 49. Integration Testing
+
+After UI changes, specifically verify:
+
+    OAuth login
+    Account linking
+    Account switching
+    Library scan
+    Track matching
+    Upload
+    Upload verification
+    Queue processing
+    Playlist synchronization
+    Playlist replication
+    Family uploads
+    Multi-account destination selection
+    History recording
+
+The UI redesign is NOT complete until these continue working.
+
+---
+
+# 50. Visual Regression Checklist
+
+Capture screenshots at:
+
+    360px
+    390px
+    430px
+    768px
+    1024px
+    1440px
+    1920px
+
+For:
+
+    Dashboard
+    Library
+    Uploads
+    Playlists
+    Queue
+    History
+    Family
+    Settings
+
+Review:
+
+- clipping
+- overflow
+- alignment
+- inconsistent spacing
+- excessive empty space
+- text wrapping
+- card sizing
+- navigation behavior
+
+---
+
+# 51. Documentation
+
+Create:
+
+    docs/ui-redesign/
+
+Files:
+
+    README.md
+    design-system.md
+    component-library.md
+    responsive-design.md
+    page-guidelines.md
+    migration-notes.md
+
+Document:
+
+- colors
+- typography
+- spacing
+- components
+- page patterns
+- responsive behavior
+- decisions
+
+---
+
+# 52. Implementation Order
+
+Do NOT redesign all pages simultaneously.
+
+Use this order:
+
+## Phase 1 — Baseline
+
+- Audit
+- Analyzer
+- Tests
+- Architecture documentation
+
+## Phase 2 — Design System
+
+- Colors
+- Typography
+- Spacing
+- Radius
+- Theme
+
+## Phase 3 — Shared Components
+
+- Headers
+- Cards
+- Status badges
+- Track rows
+- Playlist cards
+- Search
+- Empty/loading/error states
+
+## Phase 4 — App Shell
+
+- Navigation
+- Account selector
+- Global sync status
+- Responsive navigation
+
+## Phase 5 — Dashboard
+
+Complete dashboard redesign.
+
+## Phase 6 — Library
+
+Complete library redesign.
+
+## Phase 7 — Uploads
+
+Complete YTM Uploads redesign.
+
+## Phase 8 — Playlists
+
+Complete playlist overview and detail redesign.
+
+## Phase 9 — Queue
+
+Complete queue redesign.
+
+## Phase 10 — History
+
+Complete history redesign.
+
+## Phase 11 — Family
+
+Complete family/multi-account UI redesign.
+
+## Phase 12 — Settings
+
+Complete settings redesign.
+
+## Phase 13 — Dialogs
+
+Metadata editor
+Account selector
+Upload destination
+Confirmation dialogs
+
+## Phase 14 — Responsive Pass
+
+Test all pages across mobile/tablet/desktop.
+
+## Phase 15 — Accessibility
+
+Keyboard
+Semantics
+Contrast
+Touch targets
+
+## Phase 16 — Performance
+
+Artwork
+Lists
+Provider rebuilds
+Animations
+
+## Phase 17 — Final QA
+
+Full analyzer
+Full test suite
+Integration testing
+Visual review
+
+---
+
+# 53. Git Commit Strategy
+
+Use separate commits.
+
+Recommended:
+
+    ui: add red music locker design system
+
+    ui: add shared library components
+
+    ui: redesign application shell
+
+    ui: redesign dashboard
+
+    ui: redesign music library
+
+    ui: redesign ytm uploads
+
+    ui: redesign playlists
+
+    ui: redesign queue
+
+    ui: redesign sync history
+
+    ui: redesign family mode
+
+    ui: redesign settings
+
+    ui: improve responsive layouts
+
+    ui: improve accessibility
+
+    ui: optimize artwork and list rendering
+
+Do not combine the entire redesign into one massive commit.
+
+---
+
+# 54. Definition of Done
+
+The redesign is complete only when:
+
+## Visual
+
+- [ ] Consistent Red Music Locker design system
+- [ ] Premium dark UI
+- [ ] Clear hierarchy
+- [ ] Consistent spacing
+- [ ] Consistent cards
+- [ ] Consistent status badges
+- [ ] Consistent dialogs
+- [ ] Artwork used appropriately
+
+## Dashboard
+
+- [ ] Locker status
+- [ ] Statistics
+- [ ] Sync action
+- [ ] Recent activity
+- [ ] Attention-required section
+
+## Library
+
+- [ ] Search
+- [ ] Filters
+- [ ] Grid
+- [ ] List
+- [ ] Selection
+- [ ] Bulk actions
+- [ ] Track details
+
+## Uploads
+
+- [ ] Account status
+- [ ] Upload state
+- [ ] Filters
+- [ ] Bulk actions
+
+## Playlists
+
+- [ ] Playlist cards
+- [ ] Playlist detail
+- [ ] Sync state
+- [ ] Locker-only representation
+- [ ] Missing tracks
+- [ ] Replica controls
+
+## Queue
+
+- [ ] Active jobs
+- [ ] Waiting jobs
+- [ ] Completed jobs
+- [ ] Failed jobs
+- [ ] Progress
+
+## History
+
+- [ ] Timeline
+- [ ] Filters
+- [ ] Details
+
+## Family
+
+- [ ] Account cards
+- [ ] Account selection
+- [ ] Upload destinations
+- [ ] Multi-account workflow
+
+## Settings
+
+- [ ] Logical categories
+- [ ] Existing settings preserved
+- [ ] Improved readability
+
+## Responsive
+
+- [ ] 360px
+- [ ] 390px
+- [ ] 430px
+- [ ] Tablet
+- [ ] Desktop
+- [ ] Wide desktop
+
+## Functional
+
+- [ ] OAuth still works
+- [ ] Account linking still works
+- [ ] Account switching works
+- [ ] Uploads still work
+- [ ] Matching still works
+- [ ] Queue still works
+- [ ] Playlist sync still works
+- [ ] Playlist replication still works
+- [ ] Family mode still works
+- [ ] Multi-account uploads still work
+
+## Quality
+
+- [ ] flutter analyze passes
+- [ ] flutter test passes
+- [ ] no new analyzer warnings
+- [ ] no broken routes
+- [ ] no dead buttons
+- [ ] no placeholder functionality
+- [ ] no accidental backend changes
+
+---
+
+# 55. Final Product Goal
+
+Red Music Locker should ultimately feel like:
+
+    ┌─────────────────────────────────────────────┐
+    │  RED MUSIC LOCKER             Jake ▼        │
+    ├─────────────┬───────────────────────────────┤
+    │             │                               │
+    │  Home       │  MUSIC LOCKER                 │
+    │  Library    │                               │
+    │  Uploads    │  1,284 Tracks    93% Synced   │
+    │  Playlists  │                               │
+    │  Queue      │  ┌─────────┐ ┌─────────┐      │
+    │  History    │  │ Library │ │ Upload  │      │
+    │             │  └─────────┘ └─────────┘      │
+    │  ─────────  │                               │
+    │  Family     │  RECENT ACTIVITY              │
+    │  Settings   │  ✓ Upload completed           │
+    │             │  ✓ Playlist synced            │
+    │             │  ⚠ 3 tracks need review       │
+    │             │                               │
+    ├─────────────┴───────────────────────────────┤
+    │ ● YTM Connected   ↑ 17 queued   ✓ Synced    │
+    └─────────────────────────────────────────────┘
+
+The application should communicate at a glance:
+
+    "My music is safe.
+     My accounts are connected.
+     My uploads are progressing.
+     My playlists are synchronized.
+     And if something needs me, I know exactly what."
+
+That is the target experience.
