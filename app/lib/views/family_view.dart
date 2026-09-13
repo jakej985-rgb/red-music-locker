@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../core/responsive/responsive_layout.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_radius.dart';
+import '../core/theme/app_spacing.dart';
+import '../core/theme/app_typography.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
+import '../shared/widgets/shared_widgets.dart';
 
 class FamilyView extends StatefulWidget {
   final Function(int)? onNavigateTab;
@@ -103,25 +109,30 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
     final created = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF181824),
-        title: const Text('Create Family Group', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.surfaceElevated,
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.dialog),
+        title: const Text('Create Family Group', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
         content: TextField(
           controller: controller,
           autofocus: true,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: AppColors.textPrimary),
           decoration: const InputDecoration(
             labelText: 'Family Name (e.g. Johnson Family)',
-            labelStyle: TextStyle(color: Colors.grey),
-            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFFF0000))),
+            labelStyle: TextStyle(color: AppColors.textMuted),
+            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF0000)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+            ),
             onPressed: () async {
               if (controller.text.trim().isEmpty) return;
               try {
@@ -136,7 +147,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                 }
               }
             },
-            child: const Text('Create', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text('Create', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -151,25 +162,30 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF181824),
-        title: const Text('Join Family with Invite Token', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.surfaceElevated,
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.dialog),
+        title: const Text('Join Family with Invite Token', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
         content: TextField(
           controller: controller,
           autofocus: true,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: AppColors.textPrimary),
           decoration: const InputDecoration(
             labelText: 'Paste 32-character invitation token',
-            labelStyle: TextStyle(color: Colors.grey),
-            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFFF0000))),
+            labelStyle: TextStyle(color: AppColors.textMuted),
+            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.info)),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3EA6FF)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.info,
+              foregroundColor: Colors.white,
+              shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+            ),
             onPressed: () async {
               final token = controller.text.trim();
               if (token.isEmpty) return;
@@ -188,7 +204,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                 }
               }
             },
-            child: const Text('Join Family', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text('Join Family', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -204,31 +220,32 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            backgroundColor: const Color(0xFF181824),
-            title: const Text('Family Invitation Created', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            backgroundColor: AppColors.surfaceElevated,
+            shape: const RoundedRectangleBorder(borderRadius: AppRadius.dialog),
+            title: const Text('Family Invitation Created', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Share this one-time token with your family member:', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                const Text('Share this one-time token with your family member:', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF12121A),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white12),
+                    color: AppColors.surfaceSubtle,
+                    borderRadius: AppRadius.card,
+                    border: Border.all(color: AppColors.borderSubtle),
                   ),
                   child: Row(
                     children: [
                       Expanded(
                         child: SelectableText(
                           inv.invitationToken,
-                          style: const TextStyle(color: Color(0xFF3EA6FF), fontFamily: 'monospace', fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: AppColors.info, fontFamily: 'monospace', fontWeight: FontWeight.bold),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.copy, size: 18, color: Colors.grey),
+                        icon: const Icon(Icons.copy, size: 18, color: AppColors.textSecondary),
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: inv.invitationToken));
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Token copied to clipboard!')));
@@ -238,11 +255,11 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text('Expires in 48 hours. Zero implicit permissions are granted upon joining.', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                const Text('Expires in 48 hours. Zero implicit permissions are granted upon joining.', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
               ],
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Done', style: TextStyle(color: Colors.white))),
+              TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Done', style: TextStyle(color: AppColors.textPrimary))),
             ],
           ),
         );
@@ -263,7 +280,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Family Sync Triggered: ${res['jobs_triggered']} jobs across ${res['sync_targets_count']} accounts'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
           ),
         );
       }
@@ -279,10 +296,12 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = ResponsiveLayout.isMobile(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F13),
+      backgroundColor: Colors.transparent,
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(isMobile ? AppSpacing.md : AppSpacing.xl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -298,25 +317,25 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFF0000).withAlpha(30),
-                            borderRadius: BorderRadius.circular(10),
+                            color: AppColors.primaryMuted,
+                            borderRadius: AppRadius.card,
                           ),
-                          child: const Icon(Icons.people, color: Color(0xFFFF0000), size: 26),
+                          child: const Icon(Icons.people_alt_rounded, color: AppColors.primary, size: 24),
                         ),
-                        const SizedBox(width: 14),
+                        const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
                                 'Family Mode',
-                                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                                style: AppTypography.h1,
                               ),
                               Text(
                                 _selectedFamily != null
                                     ? '${_selectedFamily!.name} • ${_dashboard?.totalMembers ?? 0} members'
                                     : 'Manage family groups and multi-account destinations',
-                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                style: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],
@@ -326,31 +345,33 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                       ],
                     ),
                     if (isNarrow) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.md),
                       _buildHeaderActions(),
                     ],
                   ],
                 );
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
 
             if (_errorMessage != null) ...[
               Container(
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.red.withAlpha(30),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.redAccent.withAlpha(80)),
+                  color: AppColors.errorBg,
+                  borderRadius: AppRadius.card,
+                  border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline, size: 18, color: Colors.redAccent),
+                    const Icon(Icons.error_outline, size: 18, color: AppColors.error),
                     const SizedBox(width: 10),
-                    Expanded(child: Text(_errorMessage!, style: const TextStyle(color: Colors.redAccent, fontSize: 13))),
+                    Expanded(
+                      child: Text(_errorMessage!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+                    ),
                     IconButton(
-                      icon: const Icon(Icons.close, size: 16, color: Colors.grey),
+                      icon: const Icon(Icons.close, size: 16, color: AppColors.textMuted),
                       onPressed: () => setState(() => _errorMessage = null),
                     ),
                   ],
@@ -361,40 +382,36 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
             if (_families.isEmpty && !_isLoading) ...[
               Expanded(
                 child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.family_restroom, size: 64, color: Colors.white24),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'No Family Groups Yet',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Create a family group or join an existing one using an invite code.',
-                        style: TextStyle(fontSize: 13, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: _showCreateFamilyDialog,
-                            icon: const Icon(Icons.add, size: 16),
-                            label: const Text('Create Family Group'),
-                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF0000)),
+                  child: AppEmptyState(
+                    icon: Icons.family_restroom_rounded,
+                    title: 'No Family Groups Yet',
+                    description: 'Create a family group or join an existing one using an invite code.',
+                    customAction: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _showCreateFamilyDialog,
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text('Create Family Group'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                           ),
-                          const SizedBox(width: 12),
-                          OutlinedButton.icon(
-                            onPressed: _showJoinFamilyDialog,
-                            icon: const Icon(Icons.group_add, size: 16),
-                            label: const Text('Join with Token'),
-                            style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF3EA6FF)),
+                        ),
+                        const SizedBox(width: 12),
+                        OutlinedButton.icon(
+                          onPressed: _showJoinFamilyDialog,
+                          icon: const Icon(Icons.group_add, size: 16),
+                          label: const Text('Join with Token'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.info,
+                            side: const BorderSide(color: AppColors.info),
+                            shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -402,9 +419,10 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
               // Tabs row
               TabBar(
                 controller: _tabController,
-                indicatorColor: const Color(0xFFFF0000),
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.grey,
+                indicatorColor: AppColors.primary,
+                indicatorSize: TabBarIndicatorSize.label,
+                labelColor: AppColors.textPrimary,
+                unselectedLabelColor: AppColors.textMuted,
                 tabs: const [
                   Tab(icon: Icon(Icons.group, size: 18), text: 'Members & Privacy'),
                   Tab(icon: Icon(Icons.history, size: 18), text: 'Upload History'),
@@ -412,11 +430,11 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                   Tab(icon: Icon(Icons.playlist_play, size: 18), text: 'Shared Playlists'),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
 
               Expanded(
                 child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const Center(child: AppLoadingState(message: 'Loading family dashboard...'))
                     : TabBarView(
                         controller: _tabController,
                         children: [
@@ -445,16 +463,16 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
             height: 38,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1E28),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.white12),
+              color: AppColors.surfaceElevated,
+              borderRadius: AppRadius.card,
+              border: Border.all(color: AppColors.borderSubtle),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: _selectedFamily?.id,
-                dropdownColor: const Color(0xFF1E1E28),
-                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
-                icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                dropdownColor: AppColors.surfaceElevated,
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
+                icon: const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
                 items: _families.map((f) {
                   return DropdownMenuItem<String>(
                     value: f.id,
@@ -476,9 +494,10 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
           icon: const Icon(Icons.group_add, size: 16),
           label: const Text('Join Family', style: TextStyle(fontSize: 12)),
           style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF3EA6FF),
-            side: const BorderSide(color: Color(0xFF3EA6FF)),
+            foregroundColor: AppColors.info,
+            side: const BorderSide(color: AppColors.info),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
           ),
         ),
         ElevatedButton.icon(
@@ -486,9 +505,10 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
           icon: const Icon(Icons.add, size: 16),
           label: const Text('Create Family', style: TextStyle(fontSize: 12)),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFF0000),
+            backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
           ),
         ),
       ],
@@ -508,7 +528,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
             children: [
               Text(
                 'Members (${members.length})',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                style: AppTypography.h2,
               ),
               const Spacer(),
               if (isOwnerOrAdmin) ...[
@@ -517,9 +537,10 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                   icon: const Icon(Icons.person_add, size: 16),
                   label: const Text('Invite Member'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E1E28),
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white12),
+                    backgroundColor: AppColors.surfaceElevated,
+                    foregroundColor: AppColors.textPrimary,
+                    side: const BorderSide(color: AppColors.borderSubtle),
+                    shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -528,7 +549,11 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                 onPressed: _isActionLoading ? null : _triggerFamilySync,
                 icon: const Icon(Icons.sync, size: 16),
                 label: const Text('Sync Permitted Accounts'),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF0000), foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                ),
               ),
             ],
           ),
@@ -546,9 +571,11 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
               return Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF181824),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isSelf ? const Color(0xFFFF0000).withAlpha(80) : Colors.white12),
+                  color: AppColors.surfaceSubtle,
+                  borderRadius: AppRadius.card,
+                  border: Border.all(
+                    color: isSelf ? AppColors.primary.withValues(alpha: 0.5) : AppColors.borderSubtle,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -557,7 +584,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                       children: [
                         CircleAvatar(
                           radius: 18,
-                          backgroundColor: m.role == 'OWNER' ? const Color(0xFFFF0000) : const Color(0xFF3EA6FF),
+                          backgroundColor: m.role == 'OWNER' ? AppColors.primary : AppColors.info,
                           child: Text(
                             m.username.isNotEmpty ? m.username[0].toUpperCase() : 'U',
                             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -571,13 +598,13 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                               children: [
                                 Text(
                                   m.username + (isSelf ? ' (You)' : ''),
-                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                  style: AppTypography.h3.copyWith(color: AppColors.textPrimary),
                                 ),
                                 const SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: m.role == 'OWNER' ? const Color(0xFFFF0000).withAlpha(40) : const Color(0xFF2A2A38),
+                                    color: m.role == 'OWNER' ? AppColors.primaryMuted : AppColors.surfaceElevated,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
@@ -585,7 +612,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
-                                      color: m.role == 'OWNER' ? const Color(0xFFFF4E4E) : Colors.grey,
+                                      color: m.role == 'OWNER' ? AppColors.primaryLight : AppColors.textMuted,
                                     ),
                                   ),
                                 ),
@@ -597,16 +624,16 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                                 Icon(
                                   m.ytmConnected ? Icons.check_circle : Icons.circle_outlined,
                                   size: 11,
-                                  color: m.ytmConnected ? Colors.greenAccent : Colors.grey,
+                                  color: m.ytmConnected ? AppColors.success : AppColors.textMuted,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   m.ytmConnected ? (m.accountName ?? 'Connected') : 'Disconnected',
-                                  style: TextStyle(fontSize: 11, color: m.ytmConnected ? Colors.greenAccent : Colors.grey),
+                                  style: TextStyle(fontSize: 11, color: m.ytmConnected ? AppColors.success : AppColors.textMuted),
                                 ),
                                 if (m.uploadsCount != null) ...[
                                   const SizedBox(width: 8),
-                                  Text('• ${m.uploadsCount} uploads', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                  Text('• ${m.uploadsCount} uploads', style: AppTypography.caption),
                                 ],
                               ],
                             ),
@@ -616,12 +643,12 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                         if (isSelf) ...[
                           TextButton.icon(
                             onPressed: () => _showPrivacySettingsDialog(m),
-                            icon: const Icon(Icons.tune, size: 16, color: Color(0xFF3EA6FF)),
-                            label: const Text('My Privacy Settings', style: TextStyle(fontSize: 12, color: Color(0xFF3EA6FF))),
+                            icon: const Icon(Icons.tune, size: 16, color: AppColors.info),
+                            label: const Text('My Privacy Settings', style: TextStyle(fontSize: 12, color: AppColors.info)),
                           ),
                         ] else if (isOwnerOrAdmin && m.role != 'OWNER') ...[
                           IconButton(
-                            icon: const Icon(Icons.remove_circle_outline, size: 18, color: Colors.redAccent),
+                            icon: const Icon(Icons.remove_circle_outline, size: 18, color: AppColors.error),
                             tooltip: 'Remove Member',
                             onPressed: () => _removeMember(m.userId),
                           ),
@@ -647,7 +674,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
 
           // Invitations subsection
           if (_invitations.isNotEmpty) ...[
-            const Text('Pending Invitations', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
+            const Text('Pending Invitations', style: AppTypography.h3),
             const SizedBox(height: 8),
             ListView.separated(
               shrinkWrap: true,
@@ -659,22 +686,22 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF14141E),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white10),
+                    color: AppColors.surfaceSubtle,
+                    borderRadius: AppRadius.card,
+                    border: Border.all(color: AppColors.borderSubtle),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.link, size: 16, color: Colors.grey),
+                      const Icon(Icons.link, size: 16, color: AppColors.textMuted),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Token: ${inv.invitationToken.substring(0, 12)}... (${inv.status})',
-                          style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: Colors.white70),
+                          style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: AppColors.textSecondary),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.copy, size: 16, color: Colors.grey),
+                        icon: const Icon(Icons.copy, size: 16, color: AppColors.textMuted),
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: inv.invitationToken));
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Token copied!')));
@@ -682,7 +709,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                       ),
                       if (isOwnerOrAdmin)
                         IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
+                          icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.error),
                           onPressed: () async {
                             if (_selectedFamily != null) {
                               await apiService.revokeFamilyInvitation(_selectedFamily!.id, inv.id);
@@ -705,16 +732,16 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: isEnabled ? Colors.green.withAlpha(30) : Colors.white.withAlpha(10),
+        color: isEnabled ? AppColors.successBg : AppColors.surfaceElevated,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: isEnabled ? Colors.greenAccent.withAlpha(80) : Colors.white12),
+        border: Border.all(color: isEnabled ? AppColors.success.withValues(alpha: 0.4) : AppColors.borderSubtle),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(isEnabled ? Icons.check : Icons.close, size: 12, color: isEnabled ? Colors.greenAccent : Colors.grey),
+          Icon(isEnabled ? Icons.check : Icons.close, size: 12, color: isEnabled ? AppColors.success : AppColors.textMuted),
           const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 11, color: isEnabled ? Colors.greenAccent : Colors.grey)),
+          Text(label, style: TextStyle(fontSize: 11, color: isEnabled ? AppColors.success : AppColors.textMuted)),
         ],
       ),
     );
@@ -729,29 +756,30 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFF181824),
-          title: const Text('My Family Privacy Controls', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          backgroundColor: AppColors.surfaceElevated,
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.dialog),
+          title: const Text('My Family Privacy Controls', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               SwitchListTile(
-                activeThumbColor: const Color(0xFFFF0000),
-                title: const Text('Allow Family Uploads', style: TextStyle(color: Colors.white, fontSize: 14)),
-                subtitle: const Text('Let family members upload tracks to your YTM account', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                activeThumbColor: AppColors.primary,
+                title: const Text('Allow Family Uploads', style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                subtitle: const Text('Let family members upload tracks to your YTM account', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                 value: allowUploads,
                 onChanged: (val) => setDialogState(() => allowUploads = val),
               ),
               SwitchListTile(
-                activeThumbColor: const Color(0xFFFF0000),
-                title: const Text('Allow Family Playlists', style: TextStyle(color: Colors.white, fontSize: 14)),
-                subtitle: const Text('Let family members replicate playlists to your account', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                activeThumbColor: AppColors.primary,
+                title: const Text('Allow Family Playlists', style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                subtitle: const Text('Let family members replicate playlists to your account', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                 value: allowPlaylists,
                 onChanged: (val) => setDialogState(() => allowPlaylists = val),
               ),
               SwitchListTile(
-                activeThumbColor: const Color(0xFFFF0000),
-                title: const Text('Allow Family Sync', style: TextStyle(color: Colors.white, fontSize: 14)),
-                subtitle: const Text('Include your account in one-click family bulk sync', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                activeThumbColor: AppColors.primary,
+                title: const Text('Allow Family Sync', style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                subtitle: const Text('Include your account in one-click family bulk sync', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                 value: allowSync,
                 onChanged: (val) => setDialogState(() => allowSync = val),
               ),
@@ -760,10 +788,14 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF0000)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+              ),
               onPressed: () async {
                 if (_selectedFamily != null) {
                   await apiService.updateFamilyMemberPrivacy(
@@ -777,7 +809,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                   _loadFamilyDetails(_selectedFamily!.id);
                 }
               },
-              child: const Text('Save Permissions', style: TextStyle(color: Colors.white)),
+              child: const Text('Save Permissions'),
             ),
           ],
         ),
@@ -790,13 +822,18 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF181824),
+        backgroundColor: AppColors.surfaceElevated,
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.dialog),
         title: const Text('Remove Family Member?'),
         content: const Text('This member will be removed from the family. Their account and upload history will be preserved.'),
         actions: [
           TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+            ),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Remove'),
           ),
@@ -811,54 +848,45 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
 
   Widget _buildHistoryTab() {
     if (_history.isEmpty) {
-      return const Center(
-        child: Text('No family upload history yet', style: TextStyle(color: Colors.grey)),
+      return const AppEmptyState(
+        icon: Icons.history_rounded,
+        title: 'No Family History',
+        description: 'Upload and sync operations across family members will appear here.',
       );
     }
 
     return ListView.separated(
       itemCount: _history.length,
-      separatorBuilder: (_, _) => const Divider(color: Colors.white10, height: 1),
+      separatorBuilder: (_, _) => const Divider(color: AppColors.divider, height: 1),
       itemBuilder: (ctx, idx) {
         final item = _history[idx];
         return ListTile(
-          leading: const CircleAvatar(
-            backgroundColor: Color(0xFF2A2A38),
-            child: Icon(Icons.music_note, color: Colors.white70, size: 18),
+          leading: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceElevated,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Icon(Icons.music_note, color: AppColors.textSecondary, size: 18),
           ),
-          title: Text(item.displayTitle, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
+          title: Text(item.displayTitle, style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
           subtitle: Row(
             children: [
               Text(
                 'Requested by ${item.requestedByUsername} ➔ Dest: ${item.destinationUsername}',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF3EA6FF)),
+                style: const TextStyle(fontSize: 12, color: AppColors.info),
               ),
               if (item.completedAt != null) ...[
                 const SizedBox(width: 8),
                 Text(
                   '• ${item.completedAt!.toLocal().toString().substring(0, 16)}',
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  style: AppTypography.caption,
                 ),
               ],
             ],
           ),
-          trailing: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: item.status == 'verified' || item.status == 'completed'
-                  ? Colors.green.withAlpha(30)
-                  : Colors.amber.withAlpha(30),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              item.status.toUpperCase(),
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: item.status == 'verified' || item.status == 'completed' ? Colors.greenAccent : Colors.amber,
-              ),
-            ),
-          ),
+          trailing: AppStatusBadge.fromString(item.status),
         );
       },
     );
@@ -866,34 +894,38 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
 
   Widget _buildQueueTab() {
     if (_queue.isEmpty) {
-      return const Center(
-        child: Text('Family upload queue is empty', style: TextStyle(color: Colors.grey)),
+      return const AppEmptyState(
+        icon: Icons.queue_music_rounded,
+        title: 'Queue is Clear',
+        description: 'No active or queued multi-account operations in progress.',
       );
     }
 
     return ListView.separated(
       itemCount: _queue.length,
-      separatorBuilder: (_, _) => const Divider(color: Colors.white10, height: 1),
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (ctx, idx) {
         final item = _queue[idx];
         return Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFF181824),
-            borderRadius: BorderRadius.circular(8),
+            color: AppColors.surfaceSubtle,
+            borderRadius: AppRadius.card,
+            border: Border.all(color: AppColors.borderSubtle),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(item.displayTitle, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+              Text(item.displayTitle, style: AppTypography.h3.copyWith(color: AppColors.textPrimary)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 children: item.destinations.map((d) {
                   return Chip(
-                    backgroundColor: const Color(0xFF242432),
-                    avatar: const Icon(Icons.account_circle, size: 16, color: Color(0xFF3EA6FF)),
-                    label: Text('${d.destinationUsername}: ${d.status}', style: const TextStyle(fontSize: 11)),
+                    backgroundColor: AppColors.surfaceElevated,
+                    side: const BorderSide(color: AppColors.borderSubtle),
+                    avatar: const Icon(Icons.account_circle, size: 16, color: AppColors.info),
+                    label: Text('${d.destinationUsername}: ${d.status}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                   );
                 }).toList(),
               ),
@@ -919,7 +951,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
             content: Text(uploadMissing
                 ? 'Synced "${p.title}" and queued missing uploads to family lockers!'
                 : 'Successfully synced "${p.title}" across $count member account(s)!'),
-            backgroundColor: const Color(0xFF00897B),
+            backgroundColor: AppColors.success,
           ),
         );
         _loadFamilyDetails(_selectedFamily!.id);
@@ -929,7 +961,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Sync failed: ${e.toString().replaceFirst("Exception: ", "")}'),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -954,7 +986,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Successfully synced $total family playlist(s) with YouTube Music!'),
-            backgroundColor: const Color(0xFF00897B),
+            backgroundColor: AppColors.success,
           ),
         );
         _loadFamilyDetails(_selectedFamily!.id);
@@ -964,7 +996,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to sync all playlists: ${e.toString().replaceFirst("Exception: ", "")}'),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -983,7 +1015,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
       children: [
         Row(
           children: [
-            const Text('Family Playlists', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+            const Text('Family Playlists', style: AppTypography.h2),
             const Spacer(),
             ElevatedButton.icon(
               onPressed: (_isSyncingAllPlaylists || _playlists.isEmpty) ? null : _syncAllFamilyPlaylists,
@@ -991,27 +1023,45 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                   ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.sync, size: 16),
               label: Text(_isSyncingAllPlaylists ? 'Syncing...' : 'Sync All Playlists'),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00897B), foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+                shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+              ),
             ),
             const SizedBox(width: 8),
             ElevatedButton.icon(
               onPressed: () => _showCreateOrClonePlaylistDialog(initialCloneMode: true),
               icon: const Icon(Icons.cloud_download, size: 16),
               label: const Text('Clone from YouTube Music'),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0288D1), foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.info,
+                foregroundColor: Colors.white,
+                shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+              ),
             ),
             const SizedBox(width: 8),
             ElevatedButton.icon(
               onPressed: () => _showCreateOrClonePlaylistDialog(initialCloneMode: false),
               icon: const Icon(Icons.playlist_add, size: 16),
               label: const Text('New Empty Playlist'),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF0000), foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+              ),
             ),
           ],
         ),
         const SizedBox(height: 12),
         if (_playlists.isEmpty)
-          const Expanded(child: Center(child: Text('No family playlists found', style: TextStyle(color: Colors.grey))))
+          const Expanded(
+            child: AppEmptyState(
+              icon: Icons.playlist_play_rounded,
+              title: 'No Family Playlists',
+              description: 'Create a multi-account playlist or clone one from YouTube Music.',
+            ),
+          )
         else
           Expanded(
             child: ListView.separated(
@@ -1023,9 +1073,9 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                 final isSyncing = _syncingPlaylistIds.contains(pid);
                 return Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E1E28),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white10),
+                    color: AppColors.surfaceSubtle,
+                    borderRadius: AppRadius.card,
+                    border: Border.all(color: AppColors.borderSubtle),
                   ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -1033,15 +1083,15 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFF0000).withValues(alpha: 0.15),
+                        color: AppColors.primaryMuted,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.playlist_play, color: Color(0xFFFF0000), size: 24),
+                      child: const Icon(Icons.playlist_play, color: AppColors.primary, size: 24),
                     ),
-                    title: Text(p.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+                    title: Text(p.title, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 15)),
                     subtitle: Padding(
                       padding: const EdgeInsets.only(top: 4),
-                      child: Text('Owner: ${p.ownerUsername} • ${p.trackCount} tracks', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                      child: Text('Owner: ${p.ownerUsername} • ${p.trackCount} tracks', style: AppTypography.caption),
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1053,15 +1103,17 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                               : const Icon(Icons.sync, size: 16),
                           label: Text(isSyncing ? 'Syncing...' : 'Sync Now'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF00897B),
-                            foregroundColor: Colors.white,
+                            backgroundColor: AppColors.surfaceElevated,
+                            foregroundColor: AppColors.textPrimary,
+                            side: const BorderSide(color: AppColors.borderSubtle),
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                           ),
                         ),
                         const SizedBox(width: 6),
                         PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_vert, color: Colors.grey),
-                          color: const Color(0xFF2A2A38),
+                          icon: const Icon(Icons.more_vert, color: AppColors.textMuted),
+                          color: AppColors.surfaceElevated,
                           tooltip: 'More actions',
                           onSelected: (val) {
                             if (val == 'sync_with_uploads') {
@@ -1073,9 +1125,9 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                               value: 'sync_with_uploads',
                               child: Row(
                                 children: [
-                                  Icon(Icons.cloud_upload_outlined, color: Colors.cyanAccent, size: 18),
+                                  Icon(Icons.cloud_upload_outlined, color: AppColors.info, size: 18),
                                   SizedBox(width: 10),
-                                  Text('Sync & Upload Missing Tracks', style: TextStyle(color: Colors.white, fontSize: 13)),
+                                  Text('Sync & Upload Missing Tracks', style: TextStyle(color: AppColors.textPrimary, fontSize: 13)),
                                 ],
                               ),
                             ),
@@ -1176,17 +1228,18 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
           }
 
           return AlertDialog(
-            backgroundColor: const Color(0xFF181824),
+            backgroundColor: AppColors.surfaceElevated,
+            shape: const RoundedRectangleBorder(borderRadius: AppRadius.dialog),
             title: Row(
               children: [
                 Icon(
                   isCloneMode ? Icons.cloud_download : Icons.playlist_add,
-                  color: isCloneMode ? const Color(0xFF0288D1) : const Color(0xFFFF0000),
+                  color: isCloneMode ? AppColors.info : AppColors.primary,
                 ),
                 const SizedBox(width: 10),
                 Text(
                   isCloneMode ? 'Clone Playlist from YouTube Music' : 'Create Multi-Account Playlist',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ],
             ),
@@ -1204,16 +1257,16 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                           label: const Text('Clone Existing from YTM'),
                           avatar: const Icon(Icons.cloud_download, size: 16),
                           selected: isCloneMode,
-                          selectedColor: const Color(0xFF0288D1).withValues(alpha: 0.3),
-                          side: BorderSide(color: isCloneMode ? const Color(0xFF0288D1) : Colors.white24),
+                          selectedColor: AppColors.info.withValues(alpha: 0.25),
+                          side: BorderSide(color: isCloneMode ? AppColors.info : AppColors.borderSubtle),
                           onSelected: (val) {
                             if (val) {
                               setDialogState(() {
                                 isCloneMode = true;
                                 if (!hasLoadedInitial && selectedSourceUserId != null) {
-                                  hasLoadedInitial = true;
-                                  loadPlaylists(selectedSourceUserId, setDialogState);
-                                }
+                                    hasLoadedInitial = true;
+                                    loadPlaylists(selectedSourceUserId, setDialogState);
+                                  }
                               });
                             }
                           },
@@ -1223,8 +1276,8 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                           label: const Text('Create Blank'),
                           avatar: const Icon(Icons.add, size: 16),
                           selected: !isCloneMode,
-                          selectedColor: const Color(0xFFFF0000).withValues(alpha: 0.3),
-                          side: BorderSide(color: !isCloneMode ? const Color(0xFFFF0000) : Colors.white24),
+                          selectedColor: AppColors.primary.withValues(alpha: 0.25),
+                          side: BorderSide(color: !isCloneMode ? AppColors.primary : AppColors.borderSubtle),
                           onSelected: (val) {
                             if (val) {
                               setDialogState(() {
@@ -1239,16 +1292,16 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
 
                     if (isCloneMode) ...[
                       // Step 1: Source User
-                      const Text('1. Select Source Account', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold)),
+                      const Text('1. Select Source Account', style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
-                        dropdownColor: const Color(0xFF1E1E28),
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        dropdownColor: AppColors.surfaceElevated,
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
                         initialValue: selectedSourceUserId,
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
                           contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          prefixIcon: Icon(Icons.person, color: Color(0xFF0288D1)),
+                          prefixIcon: Icon(Icons.person, color: AppColors.info),
                         ),
                         items: playlistMembers.map((m) {
                           return DropdownMenuItem(
@@ -1268,7 +1321,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                       const SizedBox(height: 16),
 
                       // Step 2: Source Playlist
-                      const Text('2. Select YouTube Music Playlist to Clone', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold)),
+                      const Text('2. Select YouTube Music Playlist to Clone', style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 6),
                       if (isLoadingPlaylists)
                         const Padding(
@@ -1277,9 +1330,9 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0288D1))),
+                                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.info)),
                                 SizedBox(width: 12),
-                                Text('Fetching playlists from YouTube Music...', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                Text('Fetching playlists from YouTube Music...', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
                               ],
                             ),
                           ),
@@ -1288,15 +1341,15 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.amber.withValues(alpha: 0.1),
+                            color: AppColors.warningBg,
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                            border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.warning, size: 16, color: Colors.amber),
+                              const Icon(Icons.warning, size: 16, color: AppColors.warning),
                               const SizedBox(width: 8),
-                              Expanded(child: Text(playlistError!, style: const TextStyle(fontSize: 12, color: Colors.amber))),
+                              Expanded(child: Text(playlistError!, style: const TextStyle(fontSize: 12, color: AppColors.warning))),
                               IconButton(
                                 icon: const Icon(Icons.refresh, size: 16),
                                 onPressed: () => loadPlaylists(selectedSourceUserId, setDialogState),
@@ -1305,16 +1358,16 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                           ),
                         )
                       else if (sourcePlaylists.isEmpty)
-                        const Text('No playlists found for this account', style: TextStyle(color: Colors.grey, fontSize: 13))
+                        const Text('No playlists found for this account', style: TextStyle(color: AppColors.textMuted, fontSize: 13))
                       else
                         DropdownButtonFormField<String>(
-                          dropdownColor: const Color(0xFF1E1E28),
-                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          dropdownColor: AppColors.surfaceElevated,
+                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
                           initialValue: selectedSourcePlaylist?.id,
                           decoration: const InputDecoration(
                             border: OutlineInputBorder(),
                             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            prefixIcon: Icon(Icons.queue_music, color: Color(0xFF0288D1)),
+                            prefixIcon: Icon(Icons.queue_music, color: AppColors.info),
                           ),
                           items: sourcePlaylists.map((p) {
                             return DropdownMenuItem(
@@ -1338,12 +1391,12 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                       const SizedBox(height: 16),
 
                       // Destination Playlist Title
-                      const Text('Destination Playlist Name', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      const Text('Destination Playlist Name', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
                       const SizedBox(height: 4),
                       TextField(
                         controller: titleController,
                         enabled: !isSubmitting,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
                           contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -1355,10 +1408,10 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                       TextField(
                         controller: titleController,
                         enabled: !isSubmitting,
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: AppColors.textPrimary),
                         decoration: const InputDecoration(
                           labelText: 'Playlist Title',
-                          labelStyle: TextStyle(color: Colors.grey),
+                          labelStyle: TextStyle(color: AppColors.textMuted),
                           border: OutlineInputBorder(),
                         ),
                       ),
@@ -1366,13 +1419,13 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                     ],
 
                     // Step 3: Target Accounts
-                    const Text('Target Accounts (members who permit playlists):', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold)),
+                    const Text('Target Accounts (members who permit playlists):', style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
                     Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFF12121A),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                        color: AppColors.surfaceSubtle,
+                        borderRadius: AppRadius.card,
+                        border: Border.all(color: AppColors.borderSubtle),
                       ),
                       child: Column(
                         children: playlistMembers.map((m) {
@@ -1381,26 +1434,26 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                             dense: true,
                             title: Row(
                               children: [
-                                Text(m.username, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                                Text(m.username, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold)),
                                 if (m.accountName != null && m.accountName!.isNotEmpty) ...[
                                   const SizedBox(width: 8),
-                                  Text('(${m.accountName})', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                  Text('(${m.accountName})', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
                                 ],
                                 if (m.isSelf) ...[
                                   const SizedBox(width: 8),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: Colors.blueAccent.withValues(alpha: 0.2),
+                                      color: AppColors.infoBg,
                                       borderRadius: BorderRadius.circular(4),
                                     ),
-                                    child: const Text('You', style: TextStyle(fontSize: 10, color: Colors.lightBlueAccent, fontWeight: FontWeight.bold)),
+                                    child: const Text('You', style: TextStyle(fontSize: 10, color: AppColors.info, fontWeight: FontWeight.bold)),
                                   ),
                                 ],
                               ],
                             ),
                             value: isSelected,
-                            activeColor: isCloneMode ? const Color(0xFF0288D1) : const Color(0xFFFF0000),
+                            activeColor: isCloneMode ? AppColors.info : AppColors.primary,
                             onChanged: isSubmitting
                                 ? null
                                 : (val) {
@@ -1423,14 +1476,14 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                         dense: true,
                         contentPadding: EdgeInsets.zero,
                         value: uploadMissing,
-                        activeColor: const Color(0xFF8A2387),
+                        activeColor: AppColors.streaming,
                         title: const Text(
                           'Download & Upload missing songs to selected member lockers',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                         ),
                         subtitle: const Text(
                           'Ensures all members have the tracks uploaded into their personal cloud locker so everyone can play them.',
-                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                          style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                         ),
                         onChanged: isSubmitting
                             ? null
@@ -1444,7 +1497,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
 
                     if (submitError != null) ...[
                       const SizedBox(height: 12),
-                      Text(submitError!, style: const TextStyle(color: Colors.redAccent, fontSize: 13)),
+                      Text(submitError!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
                     ],
                   ],
                 ),
@@ -1453,12 +1506,13 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
             actions: [
               TextButton(
                 onPressed: isSubmitting ? null : () => Navigator.of(ctx).pop(),
-                child: const Text('Cancel'),
+                child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
               ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isCloneMode ? const Color(0xFF0288D1) : const Color(0xFFFF0000),
+                  backgroundColor: isCloneMode ? AppColors.info : AppColors.primary,
                   foregroundColor: Colors.white,
+                  shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                 ),
                 icon: isSubmitting
                     ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
@@ -1506,7 +1560,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                                       ? 'Cloned "$title" across ${targetUserIds.length} family accounts!'
                                       : 'Created multi-account playlist "$title"',
                                 ),
-                                backgroundColor: isCloneMode ? const Color(0xFF0288D1) : const Color(0xFFFF0000),
+                                backgroundColor: isCloneMode ? AppColors.info : AppColors.primary,
                               ),
                             );
                             _loadFamilyDetails(_selectedFamily!.id);
