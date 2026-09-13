@@ -690,11 +690,19 @@ class YTMClient:
             try:
                 last_res = await asyncio.to_thread(_add_chunk_sync, chunk)
             except Exception as e:
+                err_str = str(e).lower()
+                if "404" in err_str or "not found" in err_str:
+                    logger.error(f"Destination playlist {playlist_id} not found on YouTube Music (404). Aborting additions.")
+                    raise
                 logger.warning(f"Chunk batch add failed for playlist {playlist_id} ({e}), falling back to single items...")
                 for single_vid in chunk:
                     try:
                         last_res = await asyncio.to_thread(_add_chunk_sync, [single_vid])
                     except Exception as single_e:
+                        single_err = str(single_e).lower()
+                        if "404" in single_err or "not found" in single_err:
+                            logger.error(f"Destination playlist {playlist_id} not found on YouTube Music (404). Aborting additions.")
+                            raise
                         logger.warning(f"Could not add track {single_vid} to playlist {playlist_id}: {single_e}")
             if i + chunk_size < len(video_ids):
                 await asyncio.sleep(0.5)

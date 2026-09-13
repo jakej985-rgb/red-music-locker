@@ -386,82 +386,109 @@ class PlaylistReplicatorService:
                 logger.warning(f"Destination playlist {dest_id} could not be fetched: {e}")
                 dest_id = None
 
-        if not dest_id and not dry_run:
+        async def _recreate_destination() -> str:
+            nonlocal dest_id
             dest_name = config.destination_playlist_name or f"{source_title} - Locker"
             ownership_desc = (
                 f"Automated 1:1 Replica of '{source_title}'. "
                 f"[managed_by=ytmusic_sync;replica_mode={replica_mode};source_playlist_id={config.source_playlist_id}]"
             )
             logger.info(f"Creating destination playlist '{dest_name}' with ownership marker...")
-            dest_id = await _call_ytm(
+            new_dest_id = await _call_ytm(
                 ytm_client.create_playlist,
                 title=dest_name,
                 description=ownership_desc,
                 user_id=user_id
             )
-            await db.update_replicated_playlist(replicated_id, destination_playlist_id=dest_id)
-            config.destination_playlist_id = dest_id
+            await db.update_replicated_playlist(replicated_id, destination_playlist_id=new_dest_id)
+            config.destination_playlist_id = new_dest_id
+            dest_id = new_dest_id
+            return new_dest_id
+
+        if not dest_id and not dry_run:
+            dest_id = await _recreate_destination()
 
         # 5. Calculate diff
         diff = calculate_reconciliation_diff(current_dest_tracks, desired_tracks)
 
         # 6. Apply changes if not dry_run
         if not dry_run and diff["status"] == "CHANGES_REQUIRED" and dest_id:
-            # A. Execute Removals
-            if diff["removals"]:
-                removals_payload = [
-                    {"videoId": r["videoId"], "setVideoId": r["setVideoId"]}
-                    for r in diff["removals"]
-                    if r.get("videoId") and r.get("setVideoId")
-                ]
-                if removals_payload:
-                    await _call_ytm(ytm_client.remove_playlist_items, dest_id, removals_payload, user_id=user_id)
-                    for r in diff["removals"]:
+            try:
+                # A. Execute Removals
+                if diff["removals"]:
+                    removals_payload = [
+                        {"videoId": r["videoId"], "setVideoId": r["setVideoId"]}
+                        for r in diff["removals"]
+                        if r.get("videoId") and r.get("setVideoId")
+                    ]
+                    if removals_payload:
+                        await _call_ytm(ytm_client.remove_playlist_items, dest_id, removals_payload, user_id=user_id)
+                        for r in diff["removals"]:
+                            await db.record_replicated_playlist_event(
+                                replicated_playlist_id=replicated_id,
+                                action="REMOVE",
+                                source_video_id=r["videoId"],
+                                reason="Not present in desired locker playlist"
+                            )
+
+                # B. If reordering was needed or destination had complete drift:
+                # If current remaining does not match desired sequence, sync desired items
+                if diff["reordered"]:
+                    # Re-fetch after removals only if destination originally had items
+                    if current_dest_tracks:
+                        updated_dest = await _call_ytm(ytm_client.get_playlist_raw, dest_id, user_id=user_id)
+                        curr_remaining = updated_dest.get("tracks", [])
+                    else:
+                        curr_remaining = []
+
+                    curr_remaining_vids = [t.get("videoId") for t in curr_remaining]
+                    desired_vids = [t["video_id"] for t in desired_tracks]
+
+                    if curr_remaining_vids != desired_vids:
+                        # Clear and re-populate to ensure 100% exact order and duplicates
+                        clear_items = [{"videoId": t["videoId"], "setVideoId": t["setVideoId"]} for t in curr_remaining if t.get("setVideoId")]
+                        if clear_items:
+                            await _call_ytm(ytm_client.remove_playlist_items, dest_id, clear_items, user_id=user_id)
+                        if desired_vids:
+                            await _call_ytm(ytm_client.add_playlist_items, dest_id, desired_vids, duplicates=True, user_id=user_id)
+                            for t in desired_tracks:
+                                await db.record_replicated_playlist_event(
+                                    replicated_playlist_id=replicated_id,
+                                    action="ADD",
+                                    source_video_id=t["video_id"],
+                                    locker_upload_id=t["locker_upload_id"],
+                                    reason="Replicated in exact source order"
+                                )
+                elif diff["additions"]:
+                    await _call_ytm(ytm_client.add_playlist_items, dest_id, diff["additions"], duplicates=True, user_id=user_id)
+                    for vid in diff["additions"]:
                         await db.record_replicated_playlist_event(
                             replicated_playlist_id=replicated_id,
-                            action="REMOVE",
-                            source_video_id=r["videoId"],
-                            reason="Not present in desired locker playlist"
+                            action="ADD",
+                            source_video_id=vid,
+                            reason="Added new verified locker track"
                         )
-
-            # B. If reordering was needed or destination had complete drift:
-            # If current remaining does not match desired sequence, sync desired items
-            if diff["reordered"]:
-                # Re-fetch after removals only if destination originally had items
-                if current_dest_tracks:
-                    updated_dest = await _call_ytm(ytm_client.get_playlist_raw, dest_id, user_id=user_id)
-                    curr_remaining = updated_dest.get("tracks", [])
-                else:
-                    curr_remaining = []
-
-                curr_remaining_vids = [t.get("videoId") for t in curr_remaining]
-                desired_vids = [t["video_id"] for t in desired_tracks]
-
-                if curr_remaining_vids != desired_vids:
-                    # Clear and re-populate to ensure 100% exact order and duplicates
-                    clear_items = [{"videoId": t["videoId"], "setVideoId": t["setVideoId"]} for t in curr_remaining if t.get("setVideoId")]
-                    if clear_items:
-                        await _call_ytm(ytm_client.remove_playlist_items, dest_id, clear_items, user_id=user_id)
+            except Exception as e:
+                err_msg = str(e).lower()
+                if ("404" in err_msg or "not found" in err_msg) and not dry_run:
+                    logger.warning(
+                        f"Destination playlist {dest_id} failed with 404 (deleted/missing from YouTube Music). "
+                        f"Self-healing: recreating destination playlist and re-populating tracks..."
+                    )
+                    new_id = await _recreate_destination()
+                    desired_vids = [t["video_id"] for t in desired_tracks]
                     if desired_vids:
-                        await _call_ytm(ytm_client.add_playlist_items, dest_id, desired_vids, duplicates=True, user_id=user_id)
+                        await _call_ytm(ytm_client.add_playlist_items, new_id, desired_vids, duplicates=True, user_id=user_id)
                         for t in desired_tracks:
                             await db.record_replicated_playlist_event(
                                 replicated_playlist_id=replicated_id,
                                 action="ADD",
                                 source_video_id=t["video_id"],
                                 locker_upload_id=t["locker_upload_id"],
-                                reason="Replicated in exact source order"
+                                reason="Recreated replica destination playlist after 404 self-healing"
                             )
-            elif diff["additions"]:
-                await _call_ytm(ytm_client.add_playlist_items, dest_id, diff["additions"], duplicates=True, user_id=user_id)
-                for vid in diff["additions"]:
-                    await db.record_replicated_playlist_event(
-                        replicated_playlist_id=replicated_id,
-                        action="ADD",
-                        source_video_id=vid,
-                        reason="Added new verified locker track"
-                    )
-
+                else:
+                    raise
 
             # Log audit events for excluded tracks
             for ex in excluded_tracks:

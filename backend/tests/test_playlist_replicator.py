@@ -726,3 +726,68 @@ async def test_1to1_youtube_replica_preserves_streaming_tracks(temp_db):
     assert len(excluded) == 0
     assert desired[0]["video_id"] == "VID_CATALOG_1"
     assert desired[1]["video_id"] == "VID_CATALOG_2"
+
+
+@pytest.mark.asyncio
+async def test_destination_playlist_404_self_healing(temp_db):
+    """
+    Test that when a destination playlist returns 404 (deleted from YouTube Music),
+    reconciliation catches it, creates a fresh destination playlist, updates the database,
+    and populates the desired tracks into the new playlist.
+    """
+    from ytm_service.playlist_replicator import playlist_replicator
+
+    rep_id = await temp_db.create_replicated_playlist(
+        source_playlist_id="SRC_PLAYLIST_1",
+        source_playlist_name="My Jamz",
+        destination_playlist_id="DEAD_DEST_404",
+        destination_playlist_name="My Jamz - Replica",
+        enabled=True,
+        replica_mode="1to1_youtube"
+    )
+
+    mock_ytm = MagicMock()
+
+    async def mock_get_raw(pid, user_id=None):
+        if pid == "SRC_PLAYLIST_1":
+            return {
+                "id": "SRC_PLAYLIST_1",
+                "title": "My Jamz",
+                "tracks": [
+                    {"videoId": "TRACK_1", "title": "Song 1", "artist": "Artist 1"},
+                    {"videoId": "TRACK_2", "title": "Song 2", "artist": "Artist 2"}
+                ]
+            }
+        # Destination playlist returns empty tracks (as missing playlist does)
+        return {"id": pid, "title": "", "tracks": []}
+
+    mock_ytm.get_playlist_raw = AsyncMock(side_effect=mock_get_raw)
+    mock_ytm.create_playlist = AsyncMock(return_value="FRESH_HEALED_DEST_ID")
+
+    added_calls = []
+
+    async def mock_add_items(pid, vids, duplicates=True, user_id=None):
+        if pid == "DEAD_DEST_404":
+            raise Exception("Server returned HTTP 404: Not Found. Sorry, something went wrong.")
+        added_calls.append((pid, vids))
+        return {"status": "ok"}
+
+    mock_ytm.add_playlist_items = AsyncMock(side_effect=mock_add_items)
+    mock_ytm.remove_playlist_items = AsyncMock(return_value={"status": "ok"})
+
+    with patch("ytm_service.playlist_replicator.db", temp_db), \
+         patch("ytm_service.playlist_replicator.ytm_client", mock_ytm):
+
+        res = await playlist_replicator.reconcile_playlist(rep_id, dry_run=False)
+
+        assert res["status"] == "CHANGES_REQUIRED"
+        # create_playlist must have been called to recover
+        mock_ytm.create_playlist.assert_called_once()
+        # Database must be updated with the fresh healed ID
+        updated_rep = await temp_db.get_replicated_playlist(rep_id)
+        assert updated_rep.destination_playlist_id == "FRESH_HEALED_DEST_ID"
+        # Tracks must have been added to the new destination
+        assert len(added_calls) == 1
+        assert added_calls[0][0] == "FRESH_HEALED_DEST_ID"
+        assert added_calls[0][1] == ["TRACK_1", "TRACK_2"]
+
