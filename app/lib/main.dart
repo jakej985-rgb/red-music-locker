@@ -1,15 +1,25 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+
+import 'core/navigation/account_indicator.dart';
+import 'core/navigation/sync_status_indicator.dart';
+import 'core/responsive/responsive_layout.dart';
+import 'core/theme/app_colors.dart';
+import 'core/theme/app_radius.dart';
+import 'core/theme/app_spacing.dart';
+import 'core/theme/app_theme.dart';
+import 'core/theme/app_typography.dart';
+import 'models/models.dart';
+import 'services/api_service.dart';
+import 'views/components/auth_dialog.dart';
 import 'views/dashboard_view.dart';
+import 'views/family_view.dart';
+import 'views/history_view.dart';
 import 'views/library_view.dart';
-import 'views/uploads_view.dart';
 import 'views/playlists_view.dart';
 import 'views/queue_view.dart';
-import 'views/history_view.dart';
 import 'views/settings_view.dart';
-import 'views/family_view.dart';
-import 'views/components/auth_dialog.dart';
-
-import 'services/api_service.dart';
+import 'views/uploads_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,22 +36,8 @@ class YTMSyncApp extends StatelessWidget {
       title: 'Red Music Locker',
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.dark,
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0F0F13),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFFF0000),
-          secondary: Color(0xFF3EA6FF),
-          surface: Color(0xFF181820),
-          error: Color(0xFFFF4E4E),
-        ),
-        cardTheme: CardThemeData(
-          color: const Color(0xFF181820),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 0,
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.darkTheme,
+      darkTheme: AppTheme.darkTheme,
       home: const MainShell(),
     );
   }
@@ -57,11 +53,36 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
   bool _isAuthDialogOpen = false;
+  DashboardStats? _dashboardStats;
+  Timer? _statusTimer;
 
   @override
   void initState() {
     super.initState();
     apiService.onUnauthorized = _showAuthDialog;
+    _refreshStatus();
+    _statusTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) _refreshStatus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _statusTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _refreshStatus() async {
+    try {
+      final stats = await apiService.fetchDashboardStatus();
+      if (mounted) {
+        setState(() {
+          _dashboardStats = stats;
+        });
+      }
+    } catch (_) {
+      // Non-blocking background status refresh
+    }
   }
 
   void _showAuthDialog() {
@@ -69,7 +90,10 @@ class _MainShellState extends State<MainShell> {
     _isAuthDialogOpen = true;
     AuthDialog.show(context).then((_) {
       _isAuthDialogOpen = false;
-      if (mounted) setState(() {});
+      if (mounted) {
+        _refreshStatus();
+        setState(() {});
+      }
     });
   }
 
@@ -79,154 +103,137 @@ class _MainShellState extends State<MainShell> {
     });
   }
 
-  Widget _buildAccountIndicator() {
-    final user = apiService.currentUser;
-    final ytmAccount = apiService.ytmAccount;
-    final isYtmConnected = ytmAccount?.isConnected ?? false;
-
-    if (user == null) {
-      return SizedBox(
-        width: 176,
-        child: OutlinedButton.icon(
-          onPressed: _showAuthDialog,
-          icon: const Icon(Icons.login, size: 16),
-          label: const Text('Sign In', style: TextStyle(fontSize: 12)),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.white70,
-            side: const BorderSide(color: Colors.white24),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      width: 176,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E28),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white12),
+  void _showMobileMoreSheet(BuildContext context) {
+    final pendingCount = _dashboardStats?.inQueueCount ?? 0;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceElevated,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 12,
-                backgroundColor: user.isAdmin ? const Color(0xFFFF0000) : const Color(0xFF3EA6FF),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                 child: Text(
-                  user.username.isNotEmpty ? user.username[0].toUpperCase() : 'U',
-                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                  'More Views',
+                  style: AppTypography.h3.copyWith(fontSize: 16),
                 ),
               ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user.username,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      user.role,
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
-                        color: user.isAdmin ? const Color(0xFFFF4E4E) : const Color(0xFF3EA6FF),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuButton<String>(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                icon: const Icon(Icons.more_vert, size: 16, color: Colors.grey),
-                color: const Color(0xFF20202A),
-                onSelected: (val) async {
-                  if (val == 'settings') {
-                    _navigateToTab(6);
-                  } else if (val == 'family') {
-                    _navigateToTab(7);
-                  } else if (val == 'switch') {
-                    _showAuthDialog();
-                  } else if (val == 'logout') {
-                    await apiService.logout();
-                    if (mounted) {
-                      setState(() {});
-                      _showAuthDialog();
-                    }
-                  }
+              const SizedBox(height: AppSpacing.md),
+              ListTile(
+                leading: const Icon(Icons.queue_music_outlined, color: AppColors.textPrimary),
+                title: const Text('Queue'),
+                trailing: pendingCount > 0
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.warningBg,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '$pendingCount',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.warning,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                    : null,
+                selected: _selectedIndex == 4,
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _navigateToTab(4);
                 },
-                itemBuilder: (ctx) => [
-                  const PopupMenuItem(
-                    value: 'family',
-                    child: Row(
-                      children: [
-                        Icon(Icons.people, size: 16, color: Color(0xFF3EA6FF)),
-                        SizedBox(width: 8),
-                        Text('Family Mode', style: TextStyle(fontSize: 13)),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'settings',
-                    child: Row(
-                      children: [
-                        Icon(Icons.settings, size: 16),
-                        SizedBox(width: 8),
-                        Text('Settings', style: TextStyle(fontSize: 13)),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'switch',
-                    child: Row(
-                      children: [
-                        Icon(Icons.switch_account, size: 16),
-                        SizedBox(width: 8),
-                        Text('Switch User', style: TextStyle(fontSize: 13)),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'logout',
-                    child: Row(
-                      children: [
-                        Icon(Icons.logout, size: 16, color: Colors.redAccent),
-                        SizedBox(width: 8),
-                        Text('Log Out', style: TextStyle(fontSize: 13, color: Colors.redAccent)),
-                      ],
-                    ),
-                  ),
-                ],
+              ),
+              ListTile(
+                leading: const Icon(Icons.history_outlined, color: AppColors.textPrimary),
+                title: const Text('Sync History'),
+                selected: _selectedIndex == 5,
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _navigateToTab(5);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings_outlined, color: AppColors.textPrimary),
+                title: const Text('Settings'),
+                selected: _selectedIndex == 6,
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _navigateToTab(6);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.people_outline, color: AppColors.textPrimary),
+                title: const Text('Family Mode'),
+                selected: _selectedIndex == 7,
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _navigateToTab(7);
+                },
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Icon(
-                isYtmConnected ? Icons.check_circle : Icons.circle_outlined,
-                size: 10,
-                color: isYtmConnected ? Colors.greenAccent : Colors.grey,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg, horizontal: AppSpacing.md),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: AppRadius.input,
+            child: Image.asset(
+              'assets/images/logo.png',
+              width: 32,
+              height: 32,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 32,
+                height: 32,
+                padding: const EdgeInsets.all(AppSpacing.xs),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: AppRadius.input,
+                ),
+                child: const Icon(Icons.music_note, color: Colors.white, size: 20),
               ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  isYtmConnected
-                      ? (ytmAccount?.accountName ?? 'YTM Connected')
-                      : 'YTM Disconnected',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: isYtmConnected ? Colors.greenAccent : Colors.grey,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm + 4),
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'RED MUSIC LOCKER',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.1,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Text(
+                'Cloud Music Sync & Locker',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -249,12 +256,115 @@ class _MainShellState extends State<MainShell> {
       FamilyView(onNavigateTab: _navigateToTab),
     ];
 
+    final isMobile = ResponsiveLayout.isMobile(context);
+    final pendingCount = _dashboardStats?.inQueueCount ?? 0;
+
+    if (isMobile) {
+      return Scaffold(
+        appBar: AppBar(
+          titleSpacing: AppSpacing.md,
+          title: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 24,
+                  height: 24,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 24,
+                    height: 24,
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Icon(Icons.music_note, color: Colors.white, size: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              const Text(
+                'RED MUSIC LOCKER',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            AppSyncStatusIndicator(
+              stats: _dashboardStats,
+              compact: true,
+              onTap: () => _navigateToTab(4),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            AppAccountIndicator(
+              compact: true,
+              onSignIn: _showAuthDialog,
+              onNavigateTab: _navigateToTab,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+          ],
+        ),
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: views,
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _selectedIndex < 4 ? _selectedIndex : 4,
+          onDestinationSelected: (int index) {
+            if (index == 4) {
+              _showMobileMoreSheet(context);
+            } else {
+              _navigateToTab(index);
+            }
+          },
+          destinations: [
+            const NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard, color: AppColors.primary),
+              label: 'Dashboard',
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.library_music_outlined),
+              selectedIcon: Icon(Icons.library_music, color: AppColors.primary),
+              label: 'Library',
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.cloud_done_outlined),
+              selectedIcon: Icon(Icons.cloud_done, color: AppColors.primary),
+              label: 'Uploads',
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.playlist_play_outlined),
+              selectedIcon: Icon(Icons.playlist_play, color: AppColors.primary),
+              label: 'Playlists',
+            ),
+            NavigationDestination(
+              icon: pendingCount > 0
+                  ? Badge(
+                      label: Text('$pendingCount'),
+                      backgroundColor: AppColors.warning,
+                      child: const Icon(Icons.more_horiz),
+                    )
+                  : const Icon(Icons.more_horiz),
+              selectedIcon: const Icon(Icons.more_horiz, color: AppColors.primary),
+              label: 'More',
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       body: Row(
         children: [
           // Left Navigation Rail
           NavigationRail(
-            backgroundColor: const Color(0xFF14141A),
+            backgroundColor: AppColors.surface,
             selectedIndex: _selectedIndex,
             onDestinationSelected: (int index) {
               setState(() {
@@ -262,100 +372,85 @@ class _MainShellState extends State<MainShell> {
               });
             },
             extended: true,
-            minExtendedWidth: 200,
+            minExtendedWidth: 220,
+            leading: _buildLogoHeader(),
             trailing: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
-              child: _buildAccountIndicator(),
-            ),
-            leading: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
-              child: Row(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      width: 32,
-                      height: 32,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF0000),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.music_note, color: Colors.white, size: 20),
-                      ),
-                    ),
+                  AppAccountIndicator(
+                    onSignIn: _showAuthDialog,
+                    onNavigateTab: _navigateToTab,
                   ),
-                  const SizedBox(width: 12),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'RED MUSIC LOCKER',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.1,
-                        ),
-                      ),
-                      Text(
-                        'Cloud Music Sync & Locker',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: AppSpacing.sm),
+                  AppSyncStatusIndicator(
+                    stats: _dashboardStats,
+                    onTap: () => _navigateToTab(4),
                   ),
                 ],
               ),
             ),
-            destinations: const [
-              NavigationRailDestination(
+            destinations: [
+              const NavigationRailDestination(
                 icon: Icon(Icons.dashboard_outlined),
-                selectedIcon: Icon(Icons.dashboard, color: Color(0xFFFF0000)),
+                selectedIcon: Icon(Icons.dashboard, color: AppColors.primary),
                 label: Text('Dashboard'),
               ),
-              NavigationRailDestination(
+              const NavigationRailDestination(
                 icon: Icon(Icons.library_music_outlined),
-                selectedIcon: Icon(Icons.library_music, color: Color(0xFFFF0000)),
+                selectedIcon: Icon(Icons.library_music, color: AppColors.primary),
                 label: Text('Music Library'),
               ),
-              NavigationRailDestination(
+              const NavigationRailDestination(
                 icon: Icon(Icons.cloud_done_outlined),
-                selectedIcon: Icon(Icons.cloud_done, color: Color(0xFFFF0000)),
+                selectedIcon: Icon(Icons.cloud_done, color: AppColors.primary),
                 label: Text('YTM Uploads'),
               ),
-              NavigationRailDestination(
+              const NavigationRailDestination(
                 icon: Icon(Icons.playlist_play_outlined),
-                selectedIcon: Icon(Icons.playlist_play, color: Color(0xFFFF0000)),
+                selectedIcon: Icon(Icons.playlist_play, color: AppColors.primary),
                 label: Text('YTM Playlists'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.queue_music_outlined),
-                selectedIcon: Icon(Icons.queue_music, color: Color(0xFFFF0000)),
-                label: Text('Queue'),
+                icon: pendingCount > 0
+                    ? Badge(
+                        label: Text('$pendingCount'),
+                        backgroundColor: AppColors.warning,
+                        child: const Icon(Icons.queue_music_outlined),
+                      )
+                    : const Icon(Icons.queue_music_outlined),
+                selectedIcon: pendingCount > 0
+                    ? Badge(
+                        label: Text('$pendingCount'),
+                        backgroundColor: AppColors.warning,
+                        child: const Icon(Icons.queue_music, color: AppColors.primary),
+                      )
+                    : const Icon(Icons.queue_music, color: AppColors.primary),
+                label: const Text('Queue'),
               ),
-              NavigationRailDestination(
+              const NavigationRailDestination(
                 icon: Icon(Icons.history_outlined),
-                selectedIcon: Icon(Icons.history, color: Color(0xFFFF0000)),
+                selectedIcon: Icon(Icons.history, color: AppColors.primary),
                 label: Text('Sync History'),
               ),
-              NavigationRailDestination(
+              const NavigationRailDestination(
                 icon: Icon(Icons.settings_outlined),
-                selectedIcon: Icon(Icons.settings, color: Color(0xFFFF0000)),
+                selectedIcon: Icon(Icons.settings, color: AppColors.primary),
                 label: Text('Settings'),
               ),
-              NavigationRailDestination(
+              const NavigationRailDestination(
                 icon: Icon(Icons.people_outline),
-                selectedIcon: Icon(Icons.people, color: Color(0xFFFF0000)),
+                selectedIcon: Icon(Icons.people, color: AppColors.primary),
                 label: Text('Family Mode'),
               ),
             ],
           ),
-          const VerticalDivider(thickness: 1, width: 1, color: Colors.white10),
+          const VerticalDivider(thickness: 1, width: 1, color: AppColors.divider),
 
           // Main View Content
           Expanded(
