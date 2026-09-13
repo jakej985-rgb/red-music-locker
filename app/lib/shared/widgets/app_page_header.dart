@@ -20,54 +20,79 @@ class AppPageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 600;
+        final titleColumn = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (kicker != null) ...[
+              Text(
+                kicker!.toUpperCase(),
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.primaryLight,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 2.0),
+            ],
+            Text(
+              title,
+              style: AppTypography.h1.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                subtitle!,
+                style: AppTypography.bodySm.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ],
+        );
+
+        final actionsWidget = (actions != null && actions!.isNotEmpty)
+            ? Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: actions!,
+              )
+            : null;
+
+        if (isNarrow) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.xl),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (kicker != null) ...[
-                  Text(
-                    kicker!.toUpperCase(),
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.primaryLight,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 2.0),
-                ],
-                Text(
-                  title,
-                  style: AppTypography.h1.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    subtitle!,
-                    style: AppTypography.bodySm.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
+                titleColumn,
+                if (actionsWidget != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  actionsWidget,
                 ],
               ],
             ),
+          );
+        }
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(child: titleColumn),
+              ?actionsWidget,
+            ],
           ),
-          if (actions != null && actions!.isNotEmpty)
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: actions!,
-            ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

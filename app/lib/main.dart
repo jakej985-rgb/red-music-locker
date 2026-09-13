@@ -264,6 +264,7 @@ class _MainShellState extends State<MainShell> {
         appBar: AppBar(
           titleSpacing: AppSpacing.md,
           title: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
@@ -284,12 +285,16 @@ class _MainShellState extends State<MainShell> {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              const Text(
-                'RED MUSIC LOCKER',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.0,
+              const Flexible(
+                child: Text(
+                  'RED MUSIC LOCKER',
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.0,
+                  ),
                 ),
               ),
             ],
