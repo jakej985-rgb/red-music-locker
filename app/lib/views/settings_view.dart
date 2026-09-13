@@ -2,10 +2,16 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../core/responsive/responsive_layout.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_radius.dart';
+import '../core/theme/app_spacing.dart';
+import '../core/theme/app_typography.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
-import 'components/folder_browser_dialog.dart';
+import '../shared/widgets/shared_widgets.dart';
 import 'components/auth_dialog.dart';
+import 'components/folder_browser_dialog.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -114,7 +120,7 @@ class _SettingsViewState extends State<SettingsView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Added root folder: $selectedPath'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
           ),
         );
       }
@@ -132,7 +138,7 @@ class _SettingsViewState extends State<SettingsView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Added root folder: $path'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
           ),
         );
       }
@@ -150,13 +156,13 @@ class _SettingsViewState extends State<SettingsView> {
       await apiService.triggerScan([folder]);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Started scan for $folder')),
+          SnackBar(content: Text('Started scan for $folder'), backgroundColor: AppColors.surfaceElevated),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Scan failed: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text('Scan failed: $e'), backgroundColor: AppColors.error),
         );
       }
     }
@@ -178,7 +184,6 @@ class _SettingsViewState extends State<SettingsView> {
 
       if (!mounted) return;
 
-      // Validate authentication URL returned by server
       final rawUrl = session.authUrl.trim();
       if (rawUrl.isEmpty) {
         throw const FormatException('Empty authentication URL received from server.');
@@ -192,7 +197,6 @@ class _SettingsViewState extends State<SettingsView> {
         _authState = AuthState.waitingForBrowser;
       });
 
-      // Launch URL directly with web-compatible mode and fallback
       bool launched = false;
       try {
         launched = await launchUrl(
@@ -263,7 +267,7 @@ class _SettingsViewState extends State<SettingsView> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Connected to YouTube Music as ${session.userName ?? "account"}'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.success,
             ),
           );
         } else if (session.status == AuthState.failed) {
@@ -328,19 +332,26 @@ class _SettingsViewState extends State<SettingsView> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Disconnect YouTube Music?'),
+        backgroundColor: AppColors.surfaceElevated,
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.dialog),
+        title: const Text('Disconnect YouTube Music?', style: TextStyle(color: AppColors.textPrimary)),
         content: const Text(
           'Are you sure you want to disconnect? Stored credentials will be safely removed from your server.',
+          style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text('Disconnect', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+            ),
+            child: const Text('Disconnect'),
           ),
         ],
       ),
@@ -360,7 +371,7 @@ class _SettingsViewState extends State<SettingsView> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('YouTube Music account disconnected.'),
-            backgroundColor: Colors.orangeAccent,
+            backgroundColor: AppColors.warning,
           ),
         );
       }
@@ -370,7 +381,7 @@ class _SettingsViewState extends State<SettingsView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to disconnect: $e'),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -398,7 +409,7 @@ class _SettingsViewState extends State<SettingsView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(status.connected ? 'YouTube Music connected successfully!' : status.message),
-            backgroundColor: status.connected ? Colors.green : Colors.redAccent,
+            backgroundColor: status.connected ? AppColors.success : AppColors.error,
           ),
         );
       }
@@ -420,14 +431,14 @@ class _SettingsViewState extends State<SettingsView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(status.message),
-            backgroundColor: status.connected ? Colors.green : Colors.redAccent,
+            backgroundColor: status.connected ? AppColors.success : AppColors.error,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Test error: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text('Test error: $e'), backgroundColor: AppColors.error),
         );
       }
     }
@@ -436,408 +447,434 @@ class _SettingsViewState extends State<SettingsView> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: AppLoadingState(message: 'Loading settings & configuration...'));
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(28.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Settings & Configuration',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 24),
+    final isMobile = ResponsiveLayout.isMobile(context);
 
-          // User Session Card
-          _buildUserProfileCard(),
-          const SizedBox(height: 24),
-
-          // Admin User Accounts Management (visible to Admins)
-          if (apiService.currentUser?.isAdmin == true) ...[
-            _buildAdminUserManagementCard(),
-            const SizedBox(height: 24),
-          ],
-
-          // API Security Section
-          _buildCard(
-            title: 'API Authentication & Security',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Red Music Locker protects all API endpoints with an API key. '
-                  'The key is stored in config/auth/api_key.txt or defined via RED_MUSIC_LOCKER_API_KEY (or YTM_SYNC_API_KEY).',
-                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _apiKeyController,
-                        obscureText: true,
-                        style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-                        decoration: InputDecoration(
-                          hintText: 'Enter API Key',
-                          labelText: 'API Key',
-                          isDense: true,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                          filled: true,
-                          fillColor: const Color(0xFF14141A),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        final key = _apiKeyController.text.trim();
-                        final messenger = ScaffoldMessenger.of(context);
-                        await apiService.setApiKey(key);
-                        if (!mounted) return;
-                        messenger.showSnackBar(
-                          const SnackBar(content: Text('API Key saved')),
-                        );
-                        _loadAll();
-                      },
-                      icon: const Icon(Icons.key, size: 16),
-                      label: const Text('Save Key'),
-                    ),
-                  ],
-                ),
-              ],
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(isMobile ? AppSpacing.md : AppSpacing.xl),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            const AppPageHeader(
+              title: 'Settings & Configuration',
+              kicker: 'SYSTEM PREFERENCES',
+              subtitle: 'Manage authentication, music roots, sync intervals, and multi-user access',
             ),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.lg),
 
-          // 1. YouTube Music Auth Section
-          _buildYouTubeMusicConnectionCard(),
-          const SizedBox(height: 24),
+            // User Session Card
+            _buildUserProfileCard(),
+            const SizedBox(height: AppSpacing.lg),
 
-          // 2. Root Folders Section (Radarr-Style)
-          _buildCard(
-            title: '2. Root Folders',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Container directories containing your music libraries. Scanned for audio files (.mp3, .flac, .m4a, .ogg, .wma).',
-                  style: TextStyle(color: Colors.grey[400], fontSize: 13),
-                ),
-                const SizedBox(height: 16),
+            // Admin User Accounts Management (visible to Admins)
+            if (apiService.currentUser?.isAdmin == true) ...[
+              _buildAdminUserManagementCard(),
+              const SizedBox(height: AppSpacing.lg),
+            ],
 
-                if (_folderStats.isEmpty && _folders.isEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF14141A),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Text(
-                      'No root folders configured yet. Click "Add Root Folder" to select a folder inside the container (e.g. /music).',
-                      style: TextStyle(color: Colors.grey[500], fontSize: 13),
-                    ),
-                  )
-                else
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF14141A),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Table(
-                      columnWidths: const {
-                        0: FlexColumnWidth(3.5),
-                        1: FlexColumnWidth(1.5),
-                        2: FlexColumnWidth(1.2),
-                        3: FlexColumnWidth(1.8),
-                        4: FixedColumnWidth(96),
-                      },
-                      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                      children: [
-                        // Header Row
-                        TableRow(
-                          decoration: const BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Colors.white12)),
+            // API Security Section
+            _buildCard(
+              title: 'API Authentication & Security',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Red Music Locker protects all API endpoints with an API key. '
+                    'The key is stored in config/auth/api_key.txt or defined via RED_MUSIC_LOCKER_API_KEY (or YTM_SYNC_API_KEY).',
+                    style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _apiKeyController,
+                          obscureText: true,
+                          style: const TextStyle(fontFamily: 'monospace', fontSize: 13, color: AppColors.textPrimary),
+                          decoration: InputDecoration(
+                            hintText: 'Enter API Key',
+                            labelText: 'API Key',
+                            isDense: true,
+                            border: const OutlineInputBorder(borderRadius: AppRadius.button),
+                            filled: true,
+                            fillColor: AppColors.surfaceElevated,
                           ),
-                          children: [
-                            _buildTableHeader('Path'),
-                            _buildTableHeader('Free Space'),
-                            _buildTableHeader('Songs'),
-                            _buildTableHeader('Unmapped Folders'),
-                            _buildTableHeader('Actions'),
-                          ],
                         ),
-                        // Data Rows
-                        ...(_folderStats.isNotEmpty
-                            ? _folderStats
-                            : _folders.map((f) => RootFolderStats(
-                                  path: f,
-                                  exists: true,
-                                  freeSpace: 'N/A',
-                                  totalSpace: 'N/A',
-                                  songsCount: 0,
-                                  unmappedCount: 0,
-                                ))).map((stat) => TableRow(
-                              decoration: const BoxDecoration(
-                                border: Border(bottom: BorderSide(color: Colors.white10)),
-                              ),
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        stat.exists ? Icons.folder : Icons.folder_off_outlined,
-                                        size: 18,
-                                        color: stat.exists ? const Color(0xFF3EA6FF) : Colors.redAccent,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          stat.path,
-                                          style: TextStyle(
-                                            fontFamily: 'monospace',
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: stat.exists ? const Color(0xFF3EA6FF) : Colors.redAccent,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                  child: Text(
-                                    stat.freeSpace,
-                                    style: const TextStyle(fontSize: 13, fontFamily: 'monospace'),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                  child: Text(
-                                    '${stat.songsCount}',
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: stat.unmappedCount > 0
-                                              ? Colors.amber.withValues(alpha: 0.15)
-                                              : Colors.green.withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          '${stat.unmappedCount}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: stat.unmappedCount > 0 ? Colors.amberAccent : Colors.greenAccent,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.sync, size: 18, color: Colors.grey),
-                                        tooltip: 'Scan this root folder',
-                                        onPressed: () => _scanFolder(stat.path),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
-                                        tooltip: 'Remove root folder',
-                                        onPressed: () => _removeFolder(stat.path),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            )),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 16),
-
-                // Button row: [Add Root Folder] + manual path input
-                Row(
-                  children: [
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF3EA6FF),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      onPressed: _openFolderBrowser,
-                      icon: const Icon(Icons.create_new_folder_outlined, size: 18),
-                      label: const Text('Add Root Folder', style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextField(
-                        controller: _folderPathController,
-                        style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-                        decoration: InputDecoration(
-                          hintText: 'Or enter container path manually (e.g. /music)...',
-                          isDense: true,
-                          filled: true,
-                          fillColor: const Color(0xFF14141A),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                         ),
-                        onSubmitted: (_) => _addManualFolder(),
+                        onPressed: () async {
+                          final key = _apiKeyController.text.trim();
+                          final messenger = ScaffoldMessenger.of(context);
+                          await apiService.setApiKey(key);
+                          if (!mounted) return;
+                          messenger.showSnackBar(
+                            const SnackBar(content: Text('API Key saved'), backgroundColor: AppColors.surfaceElevated),
+                          );
+                          _loadAll();
+                        },
+                        icon: const Icon(Icons.key, size: 16),
+                        label: const Text('Save Key'),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    FilledButton.tonal(
-                      onPressed: _addManualFolder,
-                      child: const Text('Add'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // 3. Sync Preferences
-          _buildCard(
-            title: '3. Synchronization Preferences',
-            child: Column(
-              children: [
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Verify Uploads Post-Upload'),
-                  subtitle: Text(
-                    'Refreshes your YouTube Music library and confirms track existence before marking as verified.',
-                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                  ),
-                  value: _settings?.verifyUploads ?? true,
-                  onChanged: (val) async {
-                    await apiService.updateSettings(verifyUploads: val);
-                    setState(() => _settings = AppSettings(
-                      musicFolders: _settings!.musicFolders,
-                      autoUpload: _settings!.autoUpload,
-                      scanIntervalMinutes: _settings!.scanIntervalMinutes,
-                      verifyUploads: val,
-                    ));
-                  },
-                ),
-                const Divider(color: Colors.white10),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Automatically Upload New Music'),
-                  subtitle: Text(
-                    'Automatically queue and upload newly detected files during periodic background scans (defaults to OFF).',
-                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                  ),
-                  value: _settings?.autoUpload ?? false,
-                  onChanged: (val) async {
-                    await apiService.updateSettings(autoUpload: val);
-                    setState(() => _settings = AppSettings(
-                      musicFolders: _settings!.musicFolders,
-                      autoUpload: val,
-                      scanIntervalMinutes: _settings!.scanIntervalMinutes,
-                      verifyUploads: _settings!.verifyUploads,
-                    ));
-                  },
-                ),
-                const Divider(color: Colors.white10),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Periodic Scan Interval'),
-                  subtitle: Text(
-                    'How frequently local folders are rescanned for new music additions.',
-                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                  ),
-                  trailing: DropdownButton<int>(
-                    value: _settings?.scanIntervalMinutes ?? 15,
-                    dropdownColor: const Color(0xFF22222C),
-                    items: const [
-                      DropdownMenuItem(value: 5, child: Text('5 minutes')),
-                      DropdownMenuItem(value: 15, child: Text('15 minutes')),
-                      DropdownMenuItem(value: 30, child: Text('30 minutes')),
-                      DropdownMenuItem(value: 60, child: Text('1 hour')),
                     ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // 1. YouTube Music Auth Section
+            _buildYouTubeMusicConnectionCard(),
+            const SizedBox(height: AppSpacing.lg),
+
+            // 2. Root Folders Section (Radarr-Style)
+            _buildCard(
+              title: '2. Root Folders',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Container directories containing your music libraries. Scanned for audio files (.mp3, .flac, .m4a, .ogg, .wma).',
+                    style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 16),
+
+                  if (_folderStats.isEmpty && _folders.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceElevated,
+                        borderRadius: AppRadius.card,
+                        border: Border.all(color: AppColors.borderSubtle),
+                      ),
+                      child: Text(
+                        'No root folders configured yet. Click "Add Root Folder" to select a folder inside the container (e.g. /music).',
+                        style: AppTypography.bodySm.copyWith(color: AppColors.textMuted),
+                      ),
+                    )
+                  else
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceElevated,
+                        borderRadius: AppRadius.card,
+                        border: Border.all(color: AppColors.borderSubtle),
+                      ),
+                      child: Table(
+                        columnWidths: const {
+                          0: FlexColumnWidth(3.5),
+                          1: FlexColumnWidth(1.5),
+                          2: FlexColumnWidth(1.2),
+                          3: FlexColumnWidth(1.8),
+                          4: FixedColumnWidth(96),
+                        },
+                        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                        children: [
+                          // Header Row
+                          TableRow(
+                            decoration: const BoxDecoration(
+                              border: Border(bottom: BorderSide(color: AppColors.divider)),
+                            ),
+                            children: [
+                              _buildTableHeader('Path'),
+                              _buildTableHeader('Free Space'),
+                              _buildTableHeader('Songs'),
+                              _buildTableHeader('Unmapped Folders'),
+                              _buildTableHeader('Actions'),
+                            ],
+                          ),
+                          // Data Rows
+                          ...(_folderStats.isNotEmpty
+                              ? _folderStats
+                              : _folders.map((f) => RootFolderStats(
+                                    path: f,
+                                    exists: true,
+                                    freeSpace: 'N/A',
+                                    totalSpace: 'N/A',
+                                    songsCount: 0,
+                                    unmappedCount: 0,
+                                  ))).map((stat) => TableRow(
+                                decoration: const BoxDecoration(
+                                  border: Border(bottom: BorderSide(color: AppColors.borderSubtle)),
+                                ),
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          stat.exists ? Icons.folder : Icons.folder_off_outlined,
+                                          size: 18,
+                                          color: stat.exists ? AppColors.info : AppColors.error,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            stat.path,
+                                            style: TextStyle(
+                                              fontFamily: 'monospace',
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: stat.exists ? AppColors.info : AppColors.error,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    child: Text(
+                                      stat.freeSpace,
+                                      style: const TextStyle(fontSize: 13, fontFamily: 'monospace', color: AppColors.textPrimary),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    child: Text(
+                                      '${stat.songsCount}',
+                                      style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: stat.unmappedCount > 0
+                                                ? AppColors.warningBg
+                                                : AppColors.successBg,
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            '${stat.unmappedCount}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: stat.unmappedCount > 0 ? AppColors.warning : AppColors.success,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.sync, size: 18, color: AppColors.textMuted),
+                                          tooltip: 'Scan this root folder',
+                                          onPressed: () => _scanFolder(stat.path),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                                          tooltip: 'Remove root folder',
+                                          onPressed: () => _removeFolder(stat.path),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              )),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+
+                  // Button row: [Add Root Folder] + manual path input
+                  Row(
+                    children: [
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.info,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                          shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                        ),
+                        onPressed: _openFolderBrowser,
+                        icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+                        label: const Text('Add Root Folder', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: _folderPathController,
+                          style: const TextStyle(fontFamily: 'monospace', fontSize: 13, color: AppColors.textPrimary),
+                          decoration: const InputDecoration(
+                            hintText: 'Or enter container path manually (e.g. /music)...',
+                            isDense: true,
+                            filled: true,
+                            fillColor: AppColors.surfaceElevated,
+                            border: OutlineInputBorder(
+                              borderRadius: AppRadius.button,
+                              borderSide: BorderSide(color: AppColors.borderSubtle),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          ),
+                          onSubmitted: (_) => _addManualFolder(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton.tonal(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.surfaceElevated,
+                          foregroundColor: AppColors.textPrimary,
+                          shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                        ),
+                        onPressed: _addManualFolder,
+                        child: const Text('Add'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // 3. Sync Preferences
+            _buildCard(
+              title: '3. Synchronization Preferences',
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    activeThumbColor: AppColors.primary,
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Verify Uploads Post-Upload', style: TextStyle(color: AppColors.textPrimary)),
+                    subtitle: Text(
+                      'Refreshes your YouTube Music library and confirms track existence before marking as verified.',
+                      style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
+                    ),
+                    value: _settings?.verifyUploads ?? true,
                     onChanged: (val) async {
-                      if (val != null) {
-                        await apiService.updateSettings(scanIntervalMinutes: val);
-                        setState(() => _settings = AppSettings(
-                          musicFolders: _settings!.musicFolders,
-                          autoUpload: _settings!.autoUpload,
-                          scanIntervalMinutes: val,
-                          verifyUploads: _settings!.verifyUploads,
-                        ));
-                      }
+                      await apiService.updateSettings(verifyUploads: val);
+                      setState(() => _settings = AppSettings(
+                        musicFolders: _settings!.musicFolders,
+                        autoUpload: _settings!.autoUpload,
+                        scanIntervalMinutes: _settings!.scanIntervalMinutes,
+                        verifyUploads: val,
+                      ));
                     },
                   ),
-                ),
-                const Divider(color: Colors.white10),
-                const ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text('Sequential Uploads (One at a Time)'),
-                  subtitle: Text(
-                    'Strictly enforced for stability and avoiding YouTube Music rate limit blocks.',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  const Divider(color: AppColors.divider),
+                  SwitchListTile(
+                    activeThumbColor: AppColors.primary,
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Automatically Upload New Music', style: TextStyle(color: AppColors.textPrimary)),
+                    subtitle: Text(
+                      'Automatically queue and upload newly detected files during periodic background scans (defaults to OFF).',
+                      style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
+                    ),
+                    value: _settings?.autoUpload ?? false,
+                    onChanged: (val) async {
+                      await apiService.updateSettings(autoUpload: val);
+                      setState(() => _settings = AppSettings(
+                        musicFolders: _settings!.musicFolders,
+                        autoUpload: val,
+                        scanIntervalMinutes: _settings!.scanIntervalMinutes,
+                        verifyUploads: _settings!.verifyUploads,
+                      ));
+                    },
                   ),
-                  trailing: Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
-                ),
-              ],
+                  const Divider(color: AppColors.divider),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Periodic Scan Interval', style: TextStyle(color: AppColors.textPrimary)),
+                    subtitle: Text(
+                      'How frequently local folders are rescanned for new music additions.',
+                      style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
+                    ),
+                    trailing: DropdownButton<int>(
+                      value: _settings?.scanIntervalMinutes ?? 15,
+                      dropdownColor: AppColors.surfaceElevated,
+                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                      items: const [
+                        DropdownMenuItem(value: 5, child: Text('5 minutes')),
+                        DropdownMenuItem(value: 15, child: Text('15 minutes')),
+                        DropdownMenuItem(value: 30, child: Text('30 minutes')),
+                        DropdownMenuItem(value: 60, child: Text('1 hour')),
+                      ],
+                      onChanged: (val) async {
+                        if (val != null) {
+                          await apiService.updateSettings(scanIntervalMinutes: val);
+                          setState(() => _settings = AppSettings(
+                            musicFolders: _settings!.musicFolders,
+                            autoUpload: _settings!.autoUpload,
+                            scanIntervalMinutes: val,
+                            verifyUploads: _settings!.verifyUploads,
+                          ));
+                        }
+                      },
+                    ),
+                  ),
+                  const Divider(color: AppColors.divider),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Sequential Uploads (One at a Time)', style: TextStyle(color: AppColors.textPrimary)),
+                    subtitle: Text(
+                      'Strictly enforced for stability and avoiding YouTube Music rate limit blocks.',
+                      style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
+                    ),
+                    trailing: const Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.lg),
 
-          // 4. Database Maintenance & Backup
-          _buildCard(
-            title: '4. Database Maintenance & Backup',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Create timestamped point-in-time backups of your local tracks, matches, and upload metadata.',
-                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton.icon(
-                  onPressed: () async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    try {
-                      final path = await apiService.backupDatabase();
-                      messenger.showSnackBar(
-                        SnackBar(content: Text('Backup created: $path'), backgroundColor: Colors.green),
-                      );
-                    } catch (e) {
-                      messenger.showSnackBar(
-                        SnackBar(content: Text('Backup failed: $e'), backgroundColor: Colors.redAccent),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.backup),
-                  label: const Text('Create Database Backup'),
-                ),
-              ],
+            // 4. Database Maintenance & Backup
+            _buildCard(
+              title: '4. Database Maintenance & Backup',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Create timestamped point-in-time backups of your local tracks, matches, and upload metadata.',
+                    style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.surfaceElevated,
+                      foregroundColor: AppColors.textPrimary,
+                      side: const BorderSide(color: AppColors.borderSubtle),
+                      shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                    ),
+                    onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      try {
+                        final path = await apiService.backupDatabase();
+                        messenger.showSnackBar(
+                          SnackBar(content: Text('Backup created: $path'), backgroundColor: AppColors.success),
+                        );
+                      } catch (e) {
+                        messenger.showSnackBar(
+                          SnackBar(content: Text('Backup failed: $e'), backgroundColor: AppColors.error),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.backup, size: 16),
+                    label: const Text('Create Database Backup'),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -859,8 +896,8 @@ class _SettingsViewState extends State<SettingsView> {
                     ? Icons.check_circle
                     : (isConnecting ? Icons.sync : Icons.radio_button_checked),
                 color: isConnected
-                    ? Colors.greenAccent
-                    : (isConnecting ? Colors.amberAccent : Colors.redAccent),
+                    ? AppColors.success
+                    : (isConnecting ? AppColors.warning : AppColors.error),
                 size: 20,
               ),
               const SizedBox(width: 8),
@@ -869,8 +906,8 @@ class _SettingsViewState extends State<SettingsView> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: isConnected
-                      ? Colors.greenAccent
-                      : (isConnecting ? Colors.amberAccent : Colors.redAccent),
+                      ? AppColors.success
+                      : (isConnecting ? AppColors.warning : AppColors.error),
                 ),
               ),
               if (isConnected && _authStatus?.userName != null) ...[
@@ -878,12 +915,12 @@ class _SettingsViewState extends State<SettingsView> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.white10,
+                    color: AppColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     _authStatus!.userName!,
-                    style: const TextStyle(fontSize: 12, color: Colors.white70),
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                 ),
               ],
@@ -893,14 +930,18 @@ class _SettingsViewState extends State<SettingsView> {
                   onPressed: _testConnection,
                   icon: const Icon(Icons.network_check, size: 16),
                   label: const Text('Test Connection'),
+                  style: OutlinedButton.styleFrom(
+                    shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 OutlinedButton.icon(
                   onPressed: _disconnectAuth,
-                  icon: const Icon(Icons.link_off, size: 16, color: Colors.redAccent),
-                  label: const Text('Disconnect', style: TextStyle(color: Colors.redAccent)),
+                  icon: const Icon(Icons.link_off, size: 16, color: AppColors.error),
+                  label: const Text('Disconnect', style: TextStyle(color: AppColors.error)),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.redAccent),
+                    side: const BorderSide(color: AppColors.error),
+                    shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                   ),
                 ),
               ],
@@ -913,13 +954,13 @@ class _SettingsViewState extends State<SettingsView> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF14141A),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.2)),
+                color: AppColors.surfaceElevated,
+                borderRadius: AppRadius.card,
+                border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.verified_user, color: Colors.greenAccent, size: 24),
+                  const Icon(Icons.verified_user, color: AppColors.success, size: 24),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -927,12 +968,12 @@ class _SettingsViewState extends State<SettingsView> {
                       children: [
                         Text(
                           _authStatus?.userName ?? 'YouTube Music Account Linked',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'Your account is authorized to synchronize library uploads and playlists. Credentials are encrypted and stored safely on your server.',
-                          style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                          style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -944,9 +985,9 @@ class _SettingsViewState extends State<SettingsView> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF14141A),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.amberAccent.withValues(alpha: 0.3)),
+                color: AppColors.surfaceElevated,
+                borderRadius: AppRadius.card,
+                border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -956,7 +997,7 @@ class _SettingsViewState extends State<SettingsView> {
                       const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amberAccent),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.warning),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -966,12 +1007,12 @@ class _SettingsViewState extends State<SettingsView> {
                               : _authState == AuthState.waitingForBrowser
                                   ? 'Waiting for browser authorization...'
                                   : 'Verifying connection with YouTube Music...',
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amberAccent),
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.warning),
                         ),
                       ),
                       TextButton(
                         onPressed: _cancelAuth,
-                        child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                        child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
                       ),
                     ],
                   ),
@@ -1003,7 +1044,7 @@ class _SettingsViewState extends State<SettingsView> {
                       child: const Text(
                         "Didn't open? Click here to open YouTube Music.",
                         style: TextStyle(
-                          color: Color(0xFF3EA6FF),
+                          color: AppColors.info,
                           fontSize: 12,
                           decoration: TextDecoration.underline,
                         ),
@@ -1019,20 +1060,20 @@ class _SettingsViewState extends State<SettingsView> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1F1315),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
+                  color: AppColors.errorBg,
+                  borderRadius: AppRadius.card,
+                  border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.error_outline, size: 20, color: Colors.redAccent),
+                        Icon(Icons.error_outline, size: 20, color: AppColors.error),
                         SizedBox(width: 10),
                         Text(
                           "We couldn't connect your YouTube Music account.",
-                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent, fontSize: 14),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.error, fontSize: 14),
                         ),
                       ],
                     ),
@@ -1040,7 +1081,7 @@ class _SettingsViewState extends State<SettingsView> {
                       const SizedBox(height: 8),
                       Text(
                         _authMessage!,
-                        style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, height: 1.4),
                       ),
                     ],
                     const SizedBox(height: 16),
@@ -1049,9 +1090,10 @@ class _SettingsViewState extends State<SettingsView> {
                       icon: const Icon(Icons.refresh, size: 16),
                       label: const Text('Try Again', style: TextStyle(fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: AppColors.error,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                       ),
                     ),
                   ],
@@ -1061,7 +1103,7 @@ class _SettingsViewState extends State<SettingsView> {
               Text(
                 'Connect your YouTube Music account to synchronize your uploads and playlists.\n'
                 'Your music stays on your server, and your password is never stored by Red Music Locker.',
-                style: TextStyle(color: Colors.grey[300], fontSize: 13, height: 1.4),
+                style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary, height: 1.4),
               ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
@@ -1069,9 +1111,10 @@ class _SettingsViewState extends State<SettingsView> {
                 icon: const Icon(Icons.link, size: 18),
                 label: const Text('Connect YouTube Music', style: TextStyle(fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF0000),
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                 ),
               ),
             ],
@@ -1086,37 +1129,38 @@ class _SettingsViewState extends State<SettingsView> {
               tilePadding: EdgeInsets.zero,
               title: const Text(
                 'Advanced / Developer Authentication',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
               ),
               subtitle: const Text(
                 'For developers and troubleshooting only (manual header input)',
-                style: TextStyle(fontSize: 11, color: Colors.white38),
+                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
               ),
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF14141A),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white10),
+                    color: AppColors.surfaceElevated,
+                    borderRadius: AppRadius.card,
+                    border: Border.all(color: AppColors.borderSubtle),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Directly supply raw session authorization headers for headless environments or manual configuration:',
-                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                        style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
                       ),
                       const SizedBox(height: 10),
                       TextField(
                         controller: _headersController,
                         maxLines: 4,
-                        style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                        style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: AppColors.textPrimary),
                         decoration: InputDecoration(
                           hintText: 'cookie: ...\nauthorization: SAPISIDHASH ...',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+                          hintStyle: const TextStyle(color: AppColors.textMuted),
+                          border: const OutlineInputBorder(borderRadius: AppRadius.button),
                           filled: true,
-                          fillColor: const Color(0xFF0D0D11),
+                          fillColor: AppColors.surfaceSubtle,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -1127,8 +1171,10 @@ class _SettingsViewState extends State<SettingsView> {
                             : const Icon(Icons.code, size: 16),
                         label: const Text('Save Manual Headers'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueGrey[800],
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.surfaceSubtle,
+                          foregroundColor: AppColors.textPrimary,
+                          side: const BorderSide(color: AppColors.borderSubtle),
+                          shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                         ),
                       ),
                     ],
@@ -1150,7 +1196,7 @@ class _SettingsViewState extends State<SettingsView> {
         style: const TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 13,
-          color: Colors.grey,
+          color: AppColors.textMuted,
         ),
       ),
     );
@@ -1158,18 +1204,18 @@ class _SettingsViewState extends State<SettingsView> {
 
   Widget _buildCard({required String title, required Widget child}) {
     return Material(
-      color: const Color(0xFF1B1B22),
-      borderRadius: BorderRadius.circular(12),
+      color: AppColors.surfaceSubtle,
+      borderRadius: AppRadius.card,
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white10),
+          borderRadius: AppRadius.card,
+          border: Border.all(color: AppColors.borderSubtle),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(title, style: AppTypography.h2),
             const SizedBox(height: 16),
             child,
           ],
@@ -1188,7 +1234,7 @@ class _SettingsViewState extends State<SettingsView> {
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundColor: (user?.isAdmin ?? false) ? const Color(0xFFFF0000) : const Color(0xFF3EA6FF),
+            backgroundColor: (user?.isAdmin ?? false) ? AppColors.primary : AppColors.info,
             child: Text(
               user?.username.isNotEmpty == true ? user!.username[0].toUpperCase() : '?',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
@@ -1203,14 +1249,14 @@ class _SettingsViewState extends State<SettingsView> {
                   children: [
                     Text(
                       user?.username ?? 'Not Signed In',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: AppTypography.h3,
                     ),
                     if (user != null) ...[
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: user.isAdmin ? Colors.red.withValues(alpha: 0.2) : Colors.blue.withValues(alpha: 0.2),
+                          color: user.isAdmin ? AppColors.primaryMuted : AppColors.infoBg,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -1218,7 +1264,7 @@ class _SettingsViewState extends State<SettingsView> {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: user.isAdmin ? const Color(0xFFFF4E4E) : const Color(0xFF3EA6FF),
+                            color: user.isAdmin ? AppColors.primaryLight : AppColors.info,
                           ),
                         ),
                       ),
@@ -1230,12 +1276,18 @@ class _SettingsViewState extends State<SettingsView> {
                   user != null
                       ? 'ID: ${user.id} • YTM Account: ${ytmAccount?.accountName ?? (ytmAccount?.isConnected == true ? "Connected" : "Disconnected")}'
                       : 'Authenticate with a username & password or master API key to access features.',
-                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                  style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
                 ),
               ],
             ),
           ),
           ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.surfaceElevated,
+              foregroundColor: AppColors.textPrimary,
+              side: const BorderSide(color: AppColors.borderSubtle),
+              shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+            ),
             onPressed: () async {
               final loggedIn = await AuthDialog.show(context);
               if (loggedIn == true && mounted) {
@@ -1254,9 +1306,12 @@ class _SettingsViewState extends State<SettingsView> {
                   _loadAll();
                 }
               },
-              icon: const Icon(Icons.logout, size: 16, color: Colors.redAccent),
-              label: const Text('Log Out', style: TextStyle(color: Colors.redAccent)),
-              style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.white12)),
+              icon: const Icon(Icons.logout, size: 16, color: AppColors.error),
+              label: const Text('Log Out', style: TextStyle(color: AppColors.error)),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.borderSubtle),
+                shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+              ),
             ),
           ],
         ],
@@ -1275,15 +1330,16 @@ class _SettingsViewState extends State<SettingsView> {
             children: [
               Text(
                 'Manage application accounts and access permissions.',
-                style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
               ),
               ElevatedButton.icon(
                 onPressed: _showAddUserDialog,
                 icon: const Icon(Icons.person_add, size: 16),
                 label: const Text('Add User'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF0000),
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
+                  shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                 ),
               ),
             ],
@@ -1292,7 +1348,7 @@ class _SettingsViewState extends State<SettingsView> {
           if (_isLoadingUsers)
             const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()))
           else if (_users.isEmpty)
-            Text('No users found.', style: TextStyle(color: Colors.grey[500], fontSize: 13))
+            Text('No users found.', style: AppTypography.bodySm.copyWith(color: AppColors.textMuted))
           else
             Table(
               columnWidths: const {
@@ -1304,32 +1360,32 @@ class _SettingsViewState extends State<SettingsView> {
               defaultVerticalAlignment: TableCellVerticalAlignment.middle,
               children: [
                 TableRow(
-                  decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Colors.white12))),
+                  decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.divider))),
                   children: [
-                    Padding(padding: const EdgeInsets.symmetric(vertical: 8.0), child: Text('Username', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[400], fontSize: 12))),
-                    Padding(padding: const EdgeInsets.symmetric(vertical: 8.0), child: Text('Role', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[400], fontSize: 12))),
-                    Padding(padding: const EdgeInsets.symmetric(vertical: 8.0), child: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[400], fontSize: 12))),
-                    Padding(padding: const EdgeInsets.symmetric(vertical: 8.0), child: Text('Actions', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[400], fontSize: 12))),
+                    Padding(padding: const EdgeInsets.symmetric(vertical: 8.0), child: Text('Username', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12))),
+                    Padding(padding: const EdgeInsets.symmetric(vertical: 8.0), child: Text('Role', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12))),
+                    Padding(padding: const EdgeInsets.symmetric(vertical: 8.0), child: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12))),
+                    Padding(padding: const EdgeInsets.symmetric(vertical: 8.0), child: Text('Actions', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12))),
                   ],
                 ),
                 ..._users.map((u) {
                   final isCurrent = u.id == apiService.currentUser?.id;
                   return TableRow(
-                    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Colors.white10))),
+                    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.borderSubtle))),
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Row(
                           children: [
-                            Icon(Icons.person, size: 16, color: u.isAdmin ? Colors.redAccent : Colors.blueAccent),
+                            Icon(Icons.person, size: 16, color: u.isAdmin ? AppColors.primary : AppColors.info),
                             const SizedBox(width: 8),
-                            Text(u.username, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                            Text(u.username, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary)),
                             if (isCurrent) ...[
                               const SizedBox(width: 6),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4)),
-                                child: const Text('You', style: TextStyle(color: Colors.greenAccent, fontSize: 9)),
+                                decoration: BoxDecoration(color: AppColors.successBg, borderRadius: BorderRadius.circular(4)),
+                                child: const Text('You', style: TextStyle(color: AppColors.success, fontSize: 9, fontWeight: FontWeight.bold)),
                               ),
                             ],
                           ],
@@ -1337,15 +1393,15 @@ class _SettingsViewState extends State<SettingsView> {
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Text(u.role, style: TextStyle(fontSize: 12, color: u.isAdmin ? const Color(0xFFFF4E4E) : const Color(0xFF3EA6FF))),
+                        child: Text(u.role, style: TextStyle(fontSize: 12, color: u.isAdmin ? AppColors.primaryLight : AppColors.info)),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Row(
                           children: [
-                            Icon(u.isActive ? Icons.check_circle : Icons.cancel, size: 12, color: u.isActive ? Colors.green : Colors.red),
+                            Icon(u.isActive ? Icons.check_circle : Icons.cancel, size: 12, color: u.isActive ? AppColors.success : AppColors.error),
                             const SizedBox(width: 4),
-                            Text(u.isActive ? 'Active' : 'Disabled', style: const TextStyle(fontSize: 12)),
+                            Text(u.isActive ? 'Active' : 'Disabled', style: const TextStyle(fontSize: 12, color: AppColors.textPrimary)),
                           ],
                         ),
                       ),
@@ -1355,12 +1411,12 @@ class _SettingsViewState extends State<SettingsView> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.edit, size: 16),
+                              icon: const Icon(Icons.edit, size: 16, color: AppColors.textSecondary),
                               tooltip: 'Edit User',
                               onPressed: () => _showEditUserDialog(u),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
+                              icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.error),
                               tooltip: 'Delete User',
                               onPressed: isCurrent ? null : () => _confirmDeleteUser(u),
                             ),
@@ -1387,20 +1443,23 @@ class _SettingsViewState extends State<SettingsView> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFF181820),
-          title: const Text('Add New User'),
+          backgroundColor: AppColors.surfaceElevated,
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.dialog),
+          title: const Text('Add New User', style: TextStyle(color: AppColors.textPrimary)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (dialogError != null) ...[
-                Text(dialogError!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                Text(dialogError!, style: const TextStyle(color: AppColors.error, fontSize: 12)),
                 const SizedBox(height: 8),
               ],
               TextField(
                 controller: usernameController,
+                style: const TextStyle(color: AppColors.textPrimary),
                 decoration: const InputDecoration(
                   labelText: 'Username',
+                  labelStyle: TextStyle(color: AppColors.textMuted),
                   border: OutlineInputBorder(),
                   isDense: true,
                 ),
@@ -1409,8 +1468,10 @@ class _SettingsViewState extends State<SettingsView> {
               TextField(
                 controller: passwordController,
                 obscureText: true,
+                style: const TextStyle(color: AppColors.textPrimary),
                 decoration: const InputDecoration(
                   labelText: 'Password',
+                  labelStyle: TextStyle(color: AppColors.textMuted),
                   border: OutlineInputBorder(),
                   isDense: true,
                 ),
@@ -1418,9 +1479,11 @@ class _SettingsViewState extends State<SettingsView> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: selectedRole,
-                dropdownColor: const Color(0xFF181820),
+                dropdownColor: AppColors.surfaceElevated,
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
                 decoration: const InputDecoration(
                   labelText: 'Role',
+                  labelStyle: TextStyle(color: AppColors.textMuted),
                   border: OutlineInputBorder(),
                   isDense: true,
                 ),
@@ -1437,9 +1500,14 @@ class _SettingsViewState extends State<SettingsView> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+              ),
               onPressed: () async {
                 final uname = usernameController.text.trim();
                 final pwd = passwordController.text;
@@ -1473,21 +1541,24 @@ class _SettingsViewState extends State<SettingsView> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFF181820),
-          title: Text('Edit User: ${user.username}'),
+          backgroundColor: AppColors.surfaceElevated,
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.dialog),
+          title: Text('Edit User: ${user.username}', style: const TextStyle(color: AppColors.textPrimary)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (dialogError != null) ...[
-                Text(dialogError!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                Text(dialogError!, style: const TextStyle(color: AppColors.error, fontSize: 12)),
                 const SizedBox(height: 8),
               ],
               TextField(
                 controller: passwordController,
                 obscureText: true,
+                style: const TextStyle(color: AppColors.textPrimary),
                 decoration: const InputDecoration(
                   labelText: 'New Password (leave blank to keep current)',
+                  labelStyle: TextStyle(color: AppColors.textMuted),
                   border: OutlineInputBorder(),
                   isDense: true,
                 ),
@@ -1495,9 +1566,11 @@ class _SettingsViewState extends State<SettingsView> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: selectedRole,
-                dropdownColor: const Color(0xFF181820),
+                dropdownColor: AppColors.surfaceElevated,
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
                 decoration: const InputDecoration(
                   labelText: 'Role',
+                  labelStyle: TextStyle(color: AppColors.textMuted),
                   border: OutlineInputBorder(),
                   isDense: true,
                 ),
@@ -1511,7 +1584,8 @@ class _SettingsViewState extends State<SettingsView> {
               ),
               const SizedBox(height: 12),
               SwitchListTile(
-                title: const Text('Active Account', style: TextStyle(fontSize: 14)),
+                activeThumbColor: AppColors.primary,
+                title: const Text('Active Account', style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
                 contentPadding: EdgeInsets.zero,
                 value: isActive,
                 onChanged: (val) => setDialogState(() => isActive = val),
@@ -1521,9 +1595,14 @@ class _SettingsViewState extends State<SettingsView> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+              ),
               onPressed: () async {
                 try {
                   await apiService.updateUser(
@@ -1550,18 +1629,26 @@ class _SettingsViewState extends State<SettingsView> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF181820),
-        title: const Text('Delete User'),
-        content: Text('Are you sure you want to delete user "${user.username}"? All associated data will be removed.'),
+        backgroundColor: AppColors.surfaceElevated,
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.dialog),
+        title: const Text('Delete User', style: TextStyle(color: AppColors.textPrimary)),
+        content: Text(
+          'Are you sure you want to delete user "${user.username}"? All associated data will be removed.',
+          style: const TextStyle(color: AppColors.textSecondary),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+            ),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -1573,17 +1660,16 @@ class _SettingsViewState extends State<SettingsView> {
         await _loadUsers();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('User "${user.username}" deleted')),
+            SnackBar(content: Text('User "${user.username}" deleted'), backgroundColor: AppColors.surfaceElevated),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to delete user: $e'), backgroundColor: Colors.red),
+            SnackBar(content: Text('Failed to delete user: $e'), backgroundColor: AppColors.error),
           );
         }
       }
     }
   }
-
 }
