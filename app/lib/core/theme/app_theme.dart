@@ -25,6 +25,17 @@ abstract final class AppTheme {
         outline: AppColors.border,
         outlineVariant: AppColors.borderSubtle,
       ),
+      focusColor: AppColors.primary.withValues(alpha: 0.25),
+      hoverColor: AppColors.surfaceHover,
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceElevated,
+          borderRadius: AppRadius.badge,
+          border: Border.all(color: AppColors.border),
+        ),
+        textStyle: AppTypography.caption.copyWith(color: AppColors.textPrimary),
+        waitDuration: const Duration(milliseconds: 400),
+      ),
       cardTheme: CardThemeData(
         color: AppColors.surface,
         surfaceTintColor: Colors.transparent,

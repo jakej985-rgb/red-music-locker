@@ -84,6 +84,7 @@ class AppTrackGridCard extends StatelessWidget {
                             onChanged: onSelectionChanged,
                             activeColor: AppColors.primary,
                             side: const BorderSide(color: Colors.white, width: 1.5),
+                            semanticLabel: 'Select $title',
                           ),
                         ),
                       ),

@@ -66,6 +66,7 @@ class AppTrackRow extends StatelessWidget {
                     activeColor: AppColors.primary,
                     side: const BorderSide(color: AppColors.textSecondary, width: 1.5),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+                    semanticLabel: 'Select $title',
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
