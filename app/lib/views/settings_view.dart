@@ -427,18 +427,41 @@ class _SettingsViewState extends State<SettingsView> {
     try {
       final status = await apiService.testAuth();
       if (mounted) {
-        setState(() => _authStatus = status);
+        setState(() {
+          _authStatus = status;
+          if (!status.connected) {
+            _authMessage = status.message;
+          }
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(status.message),
             backgroundColor: status.connected ? AppColors.success : AppColors.error,
+            action: status.connected
+                ? null
+                : SnackBarAction(
+                    label: 'Fix Connection',
+                    textColor: Colors.white,
+                    onPressed: _startBrowserAuth,
+                  ),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        setState(() {
+          _authMessage = 'Connection test failed: $e';
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Test error: $e'), backgroundColor: AppColors.error),
+          SnackBar(
+            content: Text('Test error: $e'),
+            backgroundColor: AppColors.error,
+            action: SnackBarAction(
+              label: 'Fix Connection',
+              textColor: Colors.white,
+              onPressed: _startBrowserAuth,
+            ),
+          ),
         );
       }
     }
@@ -888,64 +911,110 @@ class _SettingsViewState extends State<SettingsView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Status Row
-          Row(
-            children: [
-              Icon(
-                isConnected
-                    ? Icons.check_circle
-                    : (isConnecting ? Icons.sync : Icons.radio_button_checked),
-                color: isConnected
-                    ? AppColors.success
-                    : (isConnecting ? AppColors.warning : AppColors.error),
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                isConnected ? 'Connected' : _authState.label,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isConnected
-                      ? AppColors.success
-                      : (isConnecting ? AppColors.warning : AppColors.error),
-                ),
-              ),
-              if (isConnected && _authStatus?.userName != null) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceElevated,
-                    borderRadius: BorderRadius.circular(4),
+          // Status Row with Actions
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 680;
+              final statusWidget = Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isConnected
+                        ? Icons.check_circle
+                        : (isConnecting ? Icons.sync : Icons.radio_button_checked),
+                    color: isConnected
+                        ? AppColors.success
+                        : (isConnecting ? AppColors.warning : AppColors.error),
+                    size: 20,
                   ),
-                  child: Text(
-                    _authStatus!.userName!,
-                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  const SizedBox(width: 8),
+                  Text(
+                    isConnected ? 'Connected' : _authState.label,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isConnected
+                          ? AppColors.success
+                          : (isConnecting ? AppColors.warning : AppColors.error),
+                    ),
                   ),
-                ),
-              ],
-              const Spacer(),
-              if (isConnected) ...[
-                OutlinedButton.icon(
-                  onPressed: _testConnection,
-                  icon: const Icon(Icons.network_check, size: 16),
-                  label: const Text('Test Connection'),
-                  style: OutlinedButton.styleFrom(
-                    shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                OutlinedButton.icon(
-                  onPressed: _disconnectAuth,
-                  icon: const Icon(Icons.link_off, size: 16, color: AppColors.error),
-                  label: const Text('Disconnect', style: TextStyle(color: AppColors.error)),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.error),
-                    shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
-                  ),
-                ),
-              ],
-            ],
+                  if (isConnected && _authStatus?.userName != null) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceElevated,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        _authStatus!.userName!,
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
+                ],
+              );
+
+              final actionsWidget = isConnected
+                  ? Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: _testConnection,
+                          icon: const Icon(Icons.network_check, size: 16),
+                          label: const Text('Test Connection'),
+                          style: OutlinedButton.styleFrom(
+                            shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                          ),
+                        ),
+                        Tooltip(
+                          message: 'Relink and re-authenticate your YouTube Music account without deleting credentials',
+                          child: FilledButton.icon(
+                            onPressed: _startBrowserAuth,
+                            icon: const Icon(Icons.sync_problem_rounded, size: 16),
+                            label: const Text('Fix Connection'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                            ),
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _disconnectAuth,
+                          icon: const Icon(Icons.link_off, size: 16, color: AppColors.error),
+                          label: const Text('Disconnect', style: TextStyle(color: AppColors.error)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.error),
+                            shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                          ),
+                        ),
+                      ],
+                    )
+                  : null;
+
+              if (isNarrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    statusWidget,
+                    if (actionsWidget != null) ...[
+                      const SizedBox(height: 12),
+                      actionsWidget,
+                    ],
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  statusWidget,
+                  const Spacer(),
+                  ?actionsWidget,
+                ],
+              );
+            },
           ),
           const SizedBox(height: 16),
 
@@ -978,9 +1047,57 @@ class _SettingsViewState extends State<SettingsView> {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  Tooltip(
+                    message: 'Refresh YouTube Music authentication session without disconnecting',
+                    child: OutlinedButton.icon(
+                      onPressed: _startBrowserAuth,
+                      icon: const Icon(Icons.sync, size: 16),
+                      label: const Text('Relink'),
+                      style: OutlinedButton.styleFrom(
+                        shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
+            if (_authStatus != null && !_authStatus!.connected) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.errorBg,
+                  borderRadius: AppRadius.card,
+                  border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: AppColors.error, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _authStatus!.message.isNotEmpty
+                            ? _authStatus!.message
+                            : 'Connection test failed. Please fix connection or relink your account.',
+                        style: const TextStyle(color: AppColors.error, fontSize: 13),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton.icon(
+                      onPressed: _startBrowserAuth,
+                      icon: const Icon(Icons.sync_problem_rounded, size: 16),
+                      label: const Text('Fix Connection'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        foregroundColor: Colors.white,
+                        shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ] else if (isConnecting) ...[
             Container(
               padding: const EdgeInsets.all(16),
