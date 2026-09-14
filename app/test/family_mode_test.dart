@@ -96,6 +96,26 @@ void main() {
       expect(uploadResp.jobIds, [101, 102]);
       expect(uploadResp.destinations.length, 2);
     });
+
+    test('FamilyPlaylistItem JSON deserialization with destination and source ids', () {
+      final json = {
+        'playlist_id': '10',
+        'destination_playlist_id': 'DEST_YTM_99',
+        'source_playlist_id': 'SRC_YTM_99',
+        'title': 'Mom Chill - Locker',
+        'owner_user_id': 'mom_pl',
+        'owner_username': 'mom_pl',
+        'track_count': 1000,
+      };
+      final item = FamilyPlaylistItem.fromJson(json);
+      expect(item.playlistId, '10');
+      expect(item.destinationPlaylistId, 'DEST_YTM_99');
+      expect(item.sourcePlaylistId, 'SRC_YTM_99');
+      expect(item.title, 'Mom Chill - Locker');
+      expect(item.ownerUserId, 'mom_pl');
+      expect(item.ownerUsername, 'mom_pl');
+      expect(item.trackCount, 1000);
+    });
   });
 
   group('Family Mode UI Components Rendering', () {

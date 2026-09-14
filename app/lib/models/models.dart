@@ -1285,6 +1285,8 @@ class FamilyUploadHistoryItem {
 
 class FamilyPlaylistItem {
   final String playlistId;
+  final String? destinationPlaylistId;
+  final String? sourcePlaylistId;
   final String title;
   final String? description;
   final String ownerUserId;
@@ -1293,6 +1295,8 @@ class FamilyPlaylistItem {
 
   FamilyPlaylistItem({
     required this.playlistId,
+    this.destinationPlaylistId,
+    this.sourcePlaylistId,
     required this.title,
     this.description,
     required this.ownerUserId,
@@ -1303,6 +1307,8 @@ class FamilyPlaylistItem {
   factory FamilyPlaylistItem.fromJson(Map<String, dynamic> json) {
     return FamilyPlaylistItem(
       playlistId: json['playlist_id']?.toString() ?? '',
+      destinationPlaylistId: json['destination_playlist_id']?.toString(),
+      sourcePlaylistId: json['source_playlist_id']?.toString(),
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString(),
       ownerUserId: json['owner_user_id']?.toString() ?? '',

@@ -1125,6 +1125,24 @@ class ApiService {
     throw Exception(err['detail'] ?? 'Failed to sync all family playlists');
   }
 
+  Future<Map<String, dynamic>> deleteFamilyPlaylist(
+    String familyId,
+    String playlistId, {
+    String mode = 'watcher_only',
+    bool removeFamilyOnly = false,
+    bool deleteYtm = false,
+  }) async {
+    final uri = Uri.parse(
+      '$baseUrl/api/families/$familyId/playlists/$playlistId?mode=$mode&remove_family_only=$removeFamilyOnly&delete_ytm=$deleteYtm',
+    );
+    final response = await _delete(uri);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    final err = jsonDecode(response.body);
+    throw Exception(err['detail'] ?? 'Failed to delete family playlist');
+  }
+
   Future<Map<String, dynamic>> createMultiPlaylists(
     String familyId,
     String title,

@@ -5,7 +5,7 @@ import logging
 import asyncio
 import time
 from pathlib import Path
-from typing import Optional, Any
+from typing import Optional, Any, Union
 from ytmusicapi import YTMusic, setup
 from ytmusicapi.exceptions import YTMusicUserError, YTMusicError
 
@@ -736,6 +736,19 @@ class YTMClient:
 
         logger.info(f"Removed {len(video_items)} tracks from playlist {playlist_id}")
         return last_res
+
+    async def delete_playlist(self, playlist_id: str, user_id: Optional[str] = None) -> Union[str, dict]:
+        """Delete a playlist from YouTube Music."""
+        if not self.is_auth_configured(user_id=user_id):
+            raise YTMusicUserError("Not authenticated.")
+
+        def _delete_sync():
+            yt = self._get_client(user_id=user_id)
+            return yt.delete_playlist(playlist_id)
+
+        res = await asyncio.to_thread(_delete_sync)
+        logger.info(f"Deleted playlist {playlist_id} on YouTube Music (user_id={user_id})")
+        return res
 
 ytm_client = YTMClient()
 

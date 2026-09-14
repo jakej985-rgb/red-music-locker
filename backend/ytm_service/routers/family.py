@@ -505,6 +505,99 @@ async def sync_all_family_playlists(
     }
 
 
+@router.delete("/api/families/{family_id}/playlists/{playlist_id}")
+async def delete_family_playlist(
+    family_id: str,
+    playlist_id: str,
+    mode: str = Query("watcher_only"),
+    remove_family_only: bool = Query(False),
+    delete_ytm: bool = Query(False),
+    current_user: User = Depends(require_authenticated_user)
+):
+    """Delete or remove a shared playlist from a family, with options for family unshare, watcher deletion, or YTM deletion."""
+    mem = await db.get_family_member(family_id, current_user.id)
+    if not mem:
+        raise HTTPException(status_code=403, detail="You are not a member of this family")
+
+    family = await db.get_family_by_id(family_id)
+    if not family:
+        raise HTTPException(status_code=404, detail="Family not found")
+
+    eff_mode = mode
+    if remove_family_only:
+        eff_mode = "family_only"
+    elif delete_ytm:
+        eff_mode = "delete_ytm"
+
+    config = None
+    try:
+        rep_int_id = int(playlist_id)
+        config = await db.get_replicated_playlist(rep_int_id)
+    except (ValueError, TypeError):
+        config = None
+
+    if not config:
+        async with db.get_connection() as conn:
+            async with conn.execute(
+                "SELECT * FROM replicated_playlists WHERE destination_playlist_id = ? OR source_playlist_id = ? LIMIT 1",
+                (playlist_id, playlist_id)
+            ) as cursor:
+                row = await cursor.fetchone()
+                if row:
+                    config = ReplicatedPlaylist(**dict(row))
+
+    if not config:
+        raise HTTPException(status_code=404, detail="Family playlist not found")
+
+    is_owner = (config.user_id == current_user.id)
+    is_fam_owner = (family.owner_user_id == current_user.id)
+    is_admin = (current_user.role == UserRole.ADMIN)
+
+    if not (is_owner or is_fam_owner or is_admin):
+        raise HTTPException(status_code=403, detail="Only the playlist owner or family owner can delete this playlist")
+
+    # Mode 1: Remove from family only
+    if eff_mode == "family_only":
+        await db.set_playlist_family_sharing(config.id, shared=False)
+        return {
+            "status": "success",
+            "mode": "family_only",
+            "message": f"Playlist '{config.destination_playlist_name or config.source_playlist_name}' removed from family. Locker watcher remains active.",
+            "playlist_id": config.id
+        }
+
+    # Mode 3: Delete everywhere including YouTube Music
+    if eff_mode == "delete_ytm":
+        ytm_deleted = False
+        ytm_error = None
+        if config.destination_playlist_id and not config.destination_playlist_id.startswith("local_"):
+            try:
+                await ytm_client.delete_playlist(config.destination_playlist_id, user_id=config.user_id)
+                ytm_deleted = True
+            except Exception as e:
+                logger.warning(f"Could not delete playlist on YouTube Music ({config.destination_playlist_id}): {e}")
+                ytm_error = str(e)
+
+        await db.delete_replicated_playlist(config.id)
+        return {
+            "status": "success",
+            "mode": "delete_ytm",
+            "message": "Playlist deleted from YouTube Music and locker watcher removed.",
+            "playlist_id": config.id,
+            "ytm_deleted": ytm_deleted,
+            "ytm_error": ytm_error
+        }
+
+    # Mode 2 (Default): Delete locker watcher only
+    await db.delete_replicated_playlist(config.id)
+    return {
+        "status": "success",
+        "mode": "watcher_only",
+        "message": f"Locker watcher deleted for playlist '{config.destination_playlist_name or config.source_playlist_name}'.",
+        "playlist_id": config.id
+    }
+
+
 @router.post("/api/families/{family_id}/playlists/multi")
 async def create_multi_account_playlists(family_id: str, req: FamilyMultiPlaylistRequest, current_user: User = Depends(require_authenticated_user)):
     """Create or clone independent playlist on each selected family account (Section 35)."""

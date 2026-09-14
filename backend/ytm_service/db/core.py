@@ -130,6 +130,7 @@ CREATE TABLE IF NOT EXISTS replicated_playlists (
     enabled BOOLEAN DEFAULT 1,
     sync_interval_seconds INTEGER DEFAULT 300,
     replica_mode TEXT DEFAULT '1to1_youtube',
+    shared_with_family BOOLEAN DEFAULT 1,
     last_source_revision TEXT,
     last_sync_at TIMESTAMP,
     last_sync_status TEXT,
@@ -409,11 +410,13 @@ class CoreDbMixin:
                     await db.execute("ALTER TABLE replicated_playlists_new RENAME TO replicated_playlists;")
                     await db.execute("PRAGMA foreign_keys = ON;")
 
-            # Ensure replica_mode column exists on replicated_playlists
+            # Ensure replica_mode and shared_with_family columns exist on replicated_playlists
             async with db.execute("PRAGMA table_info(replicated_playlists)") as cursor:
                 rp_cols = [row["name"] for row in await cursor.fetchall()]
                 if "replica_mode" not in rp_cols:
                     await db.execute("ALTER TABLE replicated_playlists ADD COLUMN replica_mode TEXT DEFAULT '1to1_youtube'")
+                if "shared_with_family" not in rp_cols:
+                    await db.execute("ALTER TABLE replicated_playlists ADD COLUMN shared_with_family BOOLEAN DEFAULT 1")
 
             await db.execute("CREATE INDEX IF NOT EXISTS idx_replicated_playlists_user_id ON replicated_playlists(user_id);")
             await db.execute("CREATE INDEX IF NOT EXISTS idx_ytm_uploads_user_id ON ytm_uploads(user_id);")

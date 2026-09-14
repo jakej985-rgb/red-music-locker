@@ -194,6 +194,7 @@ class ReplicatedPlaylistUpdate(BaseModel):
     destination_playlist_name: Optional[str] = None
     enabled: Optional[bool] = None
     sync_interval_seconds: Optional[int] = None
+    shared_with_family: Optional[bool] = None
 
 
 class ReplicatedPlaylist(BaseModel):
@@ -206,6 +207,7 @@ class ReplicatedPlaylist(BaseModel):
     enabled: bool = True
     sync_interval_seconds: int = 300
     replica_mode: str = "locker_only"
+    shared_with_family: bool = True
     last_source_revision: Optional[str] = None
     last_sync_at: Optional[str] = None
     last_sync_status: Optional[str] = None

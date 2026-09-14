@@ -9,6 +9,12 @@ import '../models/models.dart';
 import '../services/api_service.dart';
 import '../shared/widgets/shared_widgets.dart';
 
+enum FamilyPlaylistDeleteMode {
+  familyOnly,
+  watcherOnly,
+  deleteYtm,
+}
+
 class FamilyView extends StatefulWidget {
   final Function(int)? onNavigateTab;
 
@@ -1010,6 +1016,378 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
     }
   }
 
+  Future<void> _showDeleteFamilyPlaylistDialog(FamilyPlaylistItem p) async {
+    if (_selectedFamily == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    FamilyPlaylistDeleteMode selectedMode = FamilyPlaylistDeleteMode.familyOnly;
+    bool isDeleting = false;
+    String? submitError;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: !isDeleting,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppColors.surfaceElevated,
+              shape: const RoundedRectangleBorder(borderRadius: AppRadius.card),
+              titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+              contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: AppColors.errorBg,
+                      borderRadius: AppRadius.button,
+                    ),
+                    child: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Delete Family Playlist',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: SizedBox(
+                width: 520,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: AppRadius.card,
+                          border: Border.all(color: AppColors.borderSubtle),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.15),
+                                borderRadius: AppRadius.button,
+                              ),
+                              child: const Icon(Icons.queue_music, color: AppColors.primary, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    p.title,
+                                    style: const TextStyle(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Owner: ${p.ownerUsername} • ${p.trackCount} tracks',
+                                    style: const TextStyle(
+                                      color: AppColors.textMuted,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Choose what you want to remove:',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Option 1: Remove from Family only
+                      _buildDeleteOptionTile(
+                        title: 'Remove from Family only',
+                        description:
+                            'Stops sharing this playlist with the family. The locker sync watcher will continue synchronizing in the owner\'s locker, and the playlist on YouTube Music remains untouched.',
+                        icon: Icons.group_off_outlined,
+                        iconColor: AppColors.info,
+                        mode: FamilyPlaylistDeleteMode.familyOnly,
+                        selectedMode: selectedMode,
+                        onTap: isDeleting
+                            ? null
+                            : () => setDialogState(() => selectedMode = FamilyPlaylistDeleteMode.familyOnly),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Option 2: Delete Locker Watcher
+                      _buildDeleteOptionTile(
+                        title: 'Delete Locker Watcher',
+                        description:
+                            'Stops synchronization and removes the watcher from Red Music Locker and this family. The playlist on YouTube Music is kept intact.',
+                        icon: Icons.sync_disabled_outlined,
+                        iconColor: AppColors.warning,
+                        mode: FamilyPlaylistDeleteMode.watcherOnly,
+                        selectedMode: selectedMode,
+                        onTap: isDeleting
+                            ? null
+                            : () => setDialogState(() => selectedMode = FamilyPlaylistDeleteMode.watcherOnly),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Option 3: Delete Everywhere including YouTube Music
+                      _buildDeleteOptionTile(
+                        title: 'Delete Everywhere (including YouTube Music)',
+                        description:
+                            'Permanently deletes the playlist from YouTube Music, removes the watcher from Red Music Locker, and removes it from this family.',
+                        icon: Icons.delete_forever_outlined,
+                        iconColor: AppColors.error,
+                        mode: FamilyPlaylistDeleteMode.deleteYtm,
+                        selectedMode: selectedMode,
+                        isDestructive: true,
+                        onTap: isDeleting
+                            ? null
+                            : () => setDialogState(() => selectedMode = FamilyPlaylistDeleteMode.deleteYtm),
+                      ),
+
+                      if (submitError != null) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.errorBg,
+                            borderRadius: AppRadius.button,
+                            border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.error_outline, color: AppColors.error, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  submitError!,
+                                  style: const TextStyle(color: AppColors.error, fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isDeleting ? null : () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton.icon(
+                  onPressed: isDeleting
+                      ? null
+                      : () async {
+                          setDialogState(() {
+                            isDeleting = true;
+                            submitError = null;
+                          });
+                          try {
+                            final modeStr = selectedMode == FamilyPlaylistDeleteMode.familyOnly
+                                ? 'family_only'
+                                : (selectedMode == FamilyPlaylistDeleteMode.deleteYtm
+                                    ? 'delete_ytm'
+                                    : 'watcher_only');
+
+                            final res = await apiService.deleteFamilyPlaylist(
+                              _selectedFamily!.id,
+                              p.playlistId,
+                              mode: modeStr,
+                              removeFamilyOnly: selectedMode == FamilyPlaylistDeleteMode.familyOnly,
+                              deleteYtm: selectedMode == FamilyPlaylistDeleteMode.deleteYtm,
+                            );
+
+                            if (ctx.mounted) Navigator.of(ctx).pop();
+                            if (_selectedFamily != null) {
+                              await _loadFamilyDetails(_selectedFamily!.id);
+                            }
+
+                            if (mounted) {
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text(res['message']?.toString() ?? 'Playlist successfully updated.'),
+                                  backgroundColor: selectedMode == FamilyPlaylistDeleteMode.deleteYtm
+                                      ? AppColors.error
+                                      : AppColors.surfaceElevated,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            setDialogState(() {
+                              isDeleting = false;
+                              submitError = e.toString().replaceFirst('Exception: ', '');
+                            });
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: selectedMode == FamilyPlaylistDeleteMode.deleteYtm
+                        ? AppColors.error
+                        : (selectedMode == FamilyPlaylistDeleteMode.watcherOnly
+                            ? AppColors.warning
+                            : AppColors.primary),
+                    foregroundColor: Colors.white,
+                    shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
+                  icon: isDeleting
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : Icon(
+                          selectedMode == FamilyPlaylistDeleteMode.deleteYtm
+                              ? Icons.delete_forever
+                              : (selectedMode == FamilyPlaylistDeleteMode.watcherOnly
+                                  ? Icons.sync_disabled
+                                  : Icons.group_off),
+                          size: 16,
+                        ),
+                  label: Text(
+                    selectedMode == FamilyPlaylistDeleteMode.deleteYtm
+                        ? 'Delete from YTM & Locker'
+                        : (selectedMode == FamilyPlaylistDeleteMode.watcherOnly
+                            ? 'Delete Locker Watcher'
+                            : 'Remove from Family'),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildDeleteOptionTile({
+    required String title,
+    required String description,
+    required IconData icon,
+    required Color iconColor,
+    required FamilyPlaylistDeleteMode mode,
+    required FamilyPlaylistDeleteMode selectedMode,
+    required VoidCallback? onTap,
+    bool isDestructive = false,
+  }) {
+    final isSelected = (mode == selectedMode);
+    final borderColor = isSelected
+        ? (isDestructive ? AppColors.error : AppColors.primary)
+        : AppColors.borderSubtle;
+    final bgColor = isSelected
+        ? (isDestructive ? AppColors.errorBg : AppColors.primary.withValues(alpha: 0.1))
+        : AppColors.surface;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppRadius.card,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: AppRadius.card,
+          border: Border.all(color: borderColor, width: isSelected ? 1.5 : 1.0),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected
+                        ? (isDestructive ? AppColors.error : AppColors.primary)
+                        : AppColors.textMuted,
+                    width: isSelected ? 5 : 1.5,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(icon, size: 16, color: iconColor),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      if (isDestructive)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'IRREVERSIBLE',
+                            style: TextStyle(
+                              color: AppColors.error,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 11,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPlaylistsTab() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1119,6 +1497,8 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                           onSelected: (val) {
                             if (val == 'sync_with_uploads') {
                               _syncSingleFamilyPlaylist(p, uploadMissing: true);
+                            } else if (val == 'delete_playlist') {
+                              _showDeleteFamilyPlaylistDialog(p);
                             }
                           },
                           itemBuilder: (context) => [
@@ -1129,6 +1509,17 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                                   Icon(Icons.cloud_upload_outlined, color: AppColors.info, size: 18),
                                   SizedBox(width: 10),
                                   Text('Sync & Upload Missing Tracks', style: TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuDivider(),
+                            const PopupMenuItem(
+                              value: 'delete_playlist',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete_outline, color: AppColors.error, size: 18),
+                                  SizedBox(width: 10),
+                                  Text('Delete Playlist...', style: TextStyle(color: AppColors.error, fontSize: 13)),
                                 ],
                               ),
                             ),

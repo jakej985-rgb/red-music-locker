@@ -646,7 +646,8 @@ class FamilyDbMixin:
                        ) as track_count
                 FROM replicated_playlists rp
                 JOIN users u ON rp.user_id = u.id
-                WHERE rp.user_id IN (
+                WHERE COALESCE(rp.shared_with_family, 1) = 1
+                  AND rp.user_id IN (
                     SELECT user_id FROM family_members WHERE family_id = ? AND allow_family_playlists = 1 AND status = 'ACTIVE'
                 )
                 ORDER BY rp.created_at DESC
@@ -683,5 +684,12 @@ class FamilyDbMixin:
             })
         return results
 
-
-
+    async def set_playlist_family_sharing(self, replicated_id: int, shared: bool = False) -> bool:
+        """Update shared_with_family flag on replicated_playlists."""
+        async with self.get_connection() as db:
+            cursor = await db.execute(
+                "UPDATE replicated_playlists SET shared_with_family = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                (1 if shared else 0, replicated_id)
+            )
+            await db.commit()
+            return cursor.rowcount > 0

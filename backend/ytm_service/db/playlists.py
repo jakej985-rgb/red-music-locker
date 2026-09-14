@@ -113,7 +113,7 @@ class PlaylistDbMixin:
             if k in ("destination_playlist_id", "source_playlist_name", "destination_playlist_name", "last_source_revision", "last_sync_status", "last_sync_at", "replica_mode"):
                 set_clauses.append(f"{k} = ?")
                 values.append(v)
-            elif k in ("enabled",):
+            elif k in ("enabled", "shared_with_family"):
                 set_clauses.append(f"{k} = ?")
                 values.append(1 if v else 0)
             elif k in ("sync_interval_seconds",):

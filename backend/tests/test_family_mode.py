@@ -577,3 +577,120 @@ async def test_family_shared_playlists_track_count_uses_snapshot_not_events():
             assert sync_all_res.status_code == 200
             assert sync_all_res.json()["status"] == "success"
             assert sync_all_res.json()["total"] >= 1
+
+
+@pytest.mark.asyncio
+async def test_delete_family_playlist_options():
+    """Verify delete options for family playlists: family_only, watcher_only, delete_ytm, and permissions."""
+    from unittest.mock import patch, AsyncMock
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        dad = await create_test_user("dad_del", UserRole.USER)
+        mom = await create_test_user("mom_del", UserRole.USER)
+        stranger = await create_test_user("stranger_del", UserRole.USER)
+
+        # Create family owned by dad
+        fam_resp = await client.post("/api/families", json={"name": "Delete Test Family"}, headers=dad["headers"])
+        assert fam_resp.status_code == 200
+        family_id = fam_resp.json()["id"]
+
+        # Add mom to family
+        await client.post(
+            f"/api/families/{family_id}/members",
+            json={"user_id": mom["user"].id, "role": "MEMBER"},
+            headers=dad["headers"]
+        )
+        await client.put(
+            f"/api/families/{family_id}/members/{mom['user'].id}/privacy",
+            json={
+                "show_account_in_family": True,
+                "allow_family_uploads": True,
+                "allow_family_playlists": True,
+                "allow_family_sync": True
+            },
+            headers=mom["headers"]
+        )
+
+        # 1. Test "family_only" deletion
+        rep1_id = await db.create_replicated_playlist(
+            source_playlist_id="SRC_FAM_1",
+            source_playlist_name="Playlist One",
+            destination_playlist_id="DEST_FAM_1",
+            destination_playlist_name="Playlist One - Locker",
+            user_id=mom["user"].id
+        )
+        # Verify it shows in family
+        p_list = await client.get(f"/api/families/{family_id}/playlists", headers=dad["headers"])
+        assert any(p["playlist_id"] == str(rep1_id) for p in p_list.json())
+
+        # Mom removes from family only
+        del_resp = await client.delete(
+            f"/api/families/{family_id}/playlists/{rep1_id}?mode=family_only",
+            headers=mom["headers"]
+        )
+        assert del_resp.status_code == 200
+        assert del_resp.json()["mode"] == "family_only"
+
+        # Verify it no longer appears in family playlists
+        p_list_after = await client.get(f"/api/families/{family_id}/playlists", headers=dad["headers"])
+        assert not any(p["playlist_id"] == str(rep1_id) for p in p_list_after.json())
+
+        # BUT watcher configuration still exists in DB!
+        rep1_db = await db.get_replicated_playlist(rep1_id)
+        assert rep1_db is not None
+        assert rep1_db.shared_with_family is False
+
+        # 2. Test "watcher_only" deletion
+        rep2_id = await db.create_replicated_playlist(
+            source_playlist_id="SRC_FAM_2",
+            source_playlist_name="Playlist Two",
+            destination_playlist_id="DEST_FAM_2",
+            destination_playlist_name="Playlist Two - Locker",
+            user_id=mom["user"].id
+        )
+        # Dad (family owner) deletes locker watcher
+        del_resp2 = await client.delete(
+            f"/api/families/{family_id}/playlists/{rep2_id}?mode=watcher_only",
+            headers=dad["headers"]
+        )
+        assert del_resp2.status_code == 200
+        assert del_resp2.json()["mode"] == "watcher_only"
+
+        # Verify watcher was deleted from DB
+        rep2_db = await db.get_replicated_playlist(rep2_id)
+        assert rep2_db is None
+
+        # 3. Test "delete_ytm" mode (deletes watcher + calls YTM delete)
+        rep3_id = await db.create_replicated_playlist(
+            source_playlist_id="SRC_FAM_3",
+            source_playlist_name="Playlist Three",
+            destination_playlist_id="DEST_FAM_3",
+            destination_playlist_name="Playlist Three - Locker",
+            user_id=mom["user"].id
+        )
+        with patch("ytm_service.routers.family.ytm_client.delete_playlist", new_callable=AsyncMock) as mock_ytm_del:
+            mock_ytm_del.return_value = {"status": "ok"}
+            del_resp3 = await client.delete(
+                f"/api/families/{family_id}/playlists/{rep3_id}?delete_ytm=true",
+                headers=mom["headers"]
+            )
+            assert del_resp3.status_code == 200
+            assert del_resp3.json()["mode"] == "delete_ytm"
+            mock_ytm_del.assert_awaited_once_with("DEST_FAM_3", user_id=mom["user"].id)
+
+            rep3_db = await db.get_replicated_playlist(rep3_id)
+            assert rep3_db is None
+
+        # 4. Test unauthorized deletion attempt (stranger cannot delete)
+        rep4_id = await db.create_replicated_playlist(
+            source_playlist_id="SRC_FAM_4",
+            source_playlist_name="Playlist Four",
+            destination_playlist_id="DEST_FAM_4",
+            destination_playlist_name="Playlist Four - Locker",
+            user_id=mom["user"].id
+        )
+        unauth_resp = await client.delete(
+            f"/api/families/{family_id}/playlists/{rep4_id}",
+            headers=stranger["headers"]
+        )
+        assert unauth_resp.status_code == 403

@@ -3,7 +3,7 @@ import logging
 
 import asyncio
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..models import (
     ReplicatedPlaylist,
@@ -167,9 +167,23 @@ async def update_replicated_playlist(replicated_id: int, req: ReplicatedPlaylist
 
 
 @router.delete("/api/replicated-playlists/{replicated_id}")
-async def delete_replicated_playlist(replicated_id: int, current_user: User = Depends(require_authenticated_user)):
-    """Delete a replicated playlist watcher configuration."""
+async def delete_replicated_playlist(
+    replicated_id: int,
+    delete_ytm: bool = Query(False),
+    current_user: User = Depends(require_authenticated_user)
+):
+    """Delete a replicated playlist watcher configuration, optionally deleting the playlist on YouTube Music."""
     target_user_id = None if current_user.role == UserRole.ADMIN else current_user.id
+    config = await db.get_replicated_playlist(replicated_id, user_id=target_user_id)
+    if not config:
+        raise HTTPException(status_code=404, detail="Replicated playlist not found")
+
+    if delete_ytm and config.destination_playlist_id and not config.destination_playlist_id.startswith("local_"):
+        try:
+            await ytm_client.delete_playlist(config.destination_playlist_id, user_id=config.user_id)
+        except Exception as e:
+            logger.warning(f"Could not delete playlist on YouTube Music ({config.destination_playlist_id}): {e}")
+
     deleted = await db.delete_replicated_playlist(replicated_id, user_id=target_user_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Replicated playlist not found")
