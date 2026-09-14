@@ -29,18 +29,20 @@ class _AppErrorStateState extends State<AppErrorState> {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xxl),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 520.0),
-          padding: AppSpacing.card,
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: AppRadius.card,
-            border: Border.all(color: AppColors.error.withValues(alpha: 0.3), width: 1),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 520.0),
+            padding: AppSpacing.card,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: AppRadius.card,
+              border: Border.all(color: AppColors.error.withValues(alpha: 0.3), width: 1),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md),
@@ -101,6 +103,7 @@ class _AppErrorStateState extends State<AppErrorState> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

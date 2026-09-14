@@ -720,49 +720,105 @@ class _SettingsViewState extends State<SettingsView> {
                   const SizedBox(height: 16),
 
                   // Button row: [Add Root Folder] + manual path input
-                  Row(
-                    children: [
-                      FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.info,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                          shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
-                        ),
-                        onPressed: _openFolderBrowser,
-                        icon: const Icon(Icons.create_new_folder_outlined, size: 18),
-                        label: const Text('Add Root Folder', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: TextField(
-                          controller: _folderPathController,
-                          style: const TextStyle(fontFamily: 'monospace', fontSize: 13, color: AppColors.textPrimary),
-                          decoration: const InputDecoration(
-                            hintText: 'Or enter container path manually (e.g. /music)...',
-                            isDense: true,
-                            filled: true,
-                            fillColor: AppColors.surfaceElevated,
-                            border: OutlineInputBorder(
-                              borderRadius: AppRadius.button,
-                              borderSide: BorderSide(color: AppColors.borderSubtle),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isNarrow = constraints.maxWidth < 600;
+                      if (isNarrow) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.info,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                                shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                              ),
+                              onPressed: _openFolderBrowser,
+                              icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+                              label: const Text('Add Root Folder', style: TextStyle(fontWeight: FontWeight.bold)),
                             ),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _folderPathController,
+                                    style: const TextStyle(fontFamily: 'monospace', fontSize: 13, color: AppColors.textPrimary),
+                                    decoration: const InputDecoration(
+                                      hintText: 'Or enter container path (e.g. /music)...',
+                                      isDense: true,
+                                      filled: true,
+                                      fillColor: AppColors.surfaceElevated,
+                                      border: OutlineInputBorder(
+                                        borderRadius: AppRadius.button,
+                                        borderSide: BorderSide(color: AppColors.borderSubtle),
+                                      ),
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                    ),
+                                    onSubmitted: (_) => _addManualFolder(),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                FilledButton.tonal(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: AppColors.surfaceElevated,
+                                    foregroundColor: AppColors.textPrimary,
+                                    shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                                  ),
+                                  onPressed: _addManualFolder,
+                                  child: const Text('Add'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.info,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                              shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                            ),
+                            onPressed: _openFolderBrowser,
+                            icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+                            label: const Text('Add Root Folder', style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
-                          onSubmitted: (_) => _addManualFolder(),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      FilledButton.tonal(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.surfaceElevated,
-                          foregroundColor: AppColors.textPrimary,
-                          shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
-                        ),
-                        onPressed: _addManualFolder,
-                        child: const Text('Add'),
-                      ),
-                    ],
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: TextField(
+                              controller: _folderPathController,
+                              style: const TextStyle(fontFamily: 'monospace', fontSize: 13, color: AppColors.textPrimary),
+                              decoration: const InputDecoration(
+                                hintText: 'Or enter container path manually (e.g. /music)...',
+                                isDense: true,
+                                filled: true,
+                                fillColor: AppColors.surfaceElevated,
+                                border: OutlineInputBorder(
+                                  borderRadius: AppRadius.button,
+                                  borderSide: BorderSide(color: AppColors.borderSubtle),
+                                ),
+                                contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              ),
+                              onSubmitted: (_) => _addManualFolder(),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          FilledButton.tonal(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.surfaceElevated,
+                              foregroundColor: AppColors.textPrimary,
+                              shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                            ),
+                            onPressed: _addManualFolder,
+                            child: const Text('Add'),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -1347,99 +1403,132 @@ class _SettingsViewState extends State<SettingsView> {
 
     return _buildCard(
       title: 'Current User Session',
-      child: Row(
-        children: [
-          CircleAvatar(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 600;
+
+          final avatarWidget = CircleAvatar(
             radius: 20,
             backgroundColor: (user?.isAdmin ?? false) ? AppColors.primary : AppColors.info,
             child: Text(
               user?.username.isNotEmpty == true ? user!.username[0].toUpperCase() : '?',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
+          );
+
+          final detailsWidget = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    user?.username ?? 'Not Signed In',
+                    style: AppTypography.h3,
+                  ),
+                  if (user != null) ...[
+                    IconButton(
+                      icon: const Icon(Icons.edit, size: 16, color: AppColors.textSecondary),
+                      tooltip: 'Edit Username',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => _showEditUserDialog(user),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: user.isAdmin ? AppColors.primaryMuted : AppColors.infoBg,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        user.role,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: user.isAdmin ? AppColors.primaryLight : AppColors.info,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                user != null
+                    ? 'ID: ${user.id} • YTM Account: ${ytmAccount?.accountName ?? (ytmAccount?.isConnected == true ? "Connected" : "Disconnected")}'
+                    : 'Authenticate with a username & password or master API key to access features.',
+                style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
+              ),
+            ],
+          );
+
+          final actionsWidget = Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.surfaceElevated,
+                  foregroundColor: AppColors.textPrimary,
+                  side: const BorderSide(color: AppColors.borderSubtle),
+                  shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                ),
+                onPressed: () async {
+                  final loggedIn = await AuthDialog.show(context);
+                  if (loggedIn == true && mounted) {
+                    _loadAll();
+                  }
+                },
+                icon: const Icon(Icons.switch_account, size: 16),
+                label: Text(user == null ? 'Sign In' : 'Switch Account'),
+              ),
+              if (user != null)
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    await apiService.logout();
+                    if (mounted) {
+                      _loadAll();
+                    }
+                  },
+                  icon: const Icon(Icons.logout, size: 16, color: AppColors.error),
+                  label: const Text('Log Out', style: TextStyle(color: AppColors.error)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.borderSubtle),
+                    shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
+                  ),
+                ),
+            ],
+          );
+
+          if (isNarrow) {
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Text(
-                      user?.username ?? 'Not Signed In',
-                      style: AppTypography.h3,
-                    ),
-                    if (user != null) ...[
-                      const SizedBox(width: 8),
-                      IconButton(
-                        icon: const Icon(Icons.edit, size: 16, color: AppColors.textSecondary),
-                        tooltip: 'Edit Username',
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onPressed: () => _showEditUserDialog(user),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: user.isAdmin ? AppColors.primaryMuted : AppColors.infoBg,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          user.role,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: user.isAdmin ? AppColors.primaryLight : AppColors.info,
-                          ),
-                        ),
-                      ),
-                    ],
+                    avatarWidget,
+                    const SizedBox(width: 12),
+                    Expanded(child: detailsWidget),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  user != null
-                      ? 'ID: ${user.id} • YTM Account: ${ytmAccount?.accountName ?? (ytmAccount?.isConnected == true ? "Connected" : "Disconnected")}'
-                      : 'Authenticate with a username & password or master API key to access features.',
-                  style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
-                ),
+                const SizedBox(height: 16),
+                actionsWidget,
               ],
-            ),
-          ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.surfaceElevated,
-              foregroundColor: AppColors.textPrimary,
-              side: const BorderSide(color: AppColors.borderSubtle),
-              shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
-            ),
-            onPressed: () async {
-              final loggedIn = await AuthDialog.show(context);
-              if (loggedIn == true && mounted) {
-                _loadAll();
-              }
-            },
-            icon: const Icon(Icons.switch_account, size: 16),
-            label: Text(user == null ? 'Sign In' : 'Switch Account'),
-          ),
-          if (user != null) ...[
-            const SizedBox(width: 8),
-            OutlinedButton.icon(
-              onPressed: () async {
-                await apiService.logout();
-                if (mounted) {
-                  _loadAll();
-                }
-              },
-              icon: const Icon(Icons.logout, size: 16, color: AppColors.error),
-              label: const Text('Log Out', style: TextStyle(color: AppColors.error)),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.borderSubtle),
-                shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
-              ),
-            ),
-          ],
-        ],
+            );
+          }
+
+          return Row(
+            children: [
+              avatarWidget,
+              const SizedBox(width: 16),
+              Expanded(child: detailsWidget),
+              const SizedBox(width: 16),
+              actionsWidget,
+            ],
+          );
+        },
       ),
     );
   }

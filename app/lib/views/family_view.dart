@@ -386,8 +386,10 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                     icon: Icons.family_restroom_rounded,
                     title: 'No Family Groups Yet',
                     description: 'Create a family group or join an existing one using an invite code.',
-                    customAction: Row(
-                      mainAxisSize: MainAxisSize.min,
+                    customAction: Wrap(
+                      spacing: 12,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
                       children: [
                         ElevatedButton.icon(
                           onPressed: _showCreateFamilyDialog,
@@ -399,7 +401,6 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                             shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                           ),
                         ),
-                        const SizedBox(width: 12),
                         OutlinedButton.icon(
                           onPressed: _showJoinFamilyDialog,
                           icon: const Icon(Icons.group_add, size: 16),

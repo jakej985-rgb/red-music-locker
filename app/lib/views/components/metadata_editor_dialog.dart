@@ -2,6 +2,11 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../../core/responsive/responsive_layout.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../models/models.dart';
 import '../../services/api_service.dart';
 
@@ -452,8 +457,8 @@ class _MetadataEditorDialogState extends State<MetadataEditorDialog> {
 
   Widget _buildProviderChips() {
     final providers = [
-      {'id': 'all', 'label': 'All Sources', 'icon': Icons.hub_outlined, 'color': const Color(0xFF00B4D8)},
-      {'id': 'ytm', 'label': 'YouTube Music', 'icon': Icons.play_circle_fill, 'color': const Color(0xFFFF0000)},
+      {'id': 'all', 'label': 'All Sources', 'icon': Icons.hub_outlined, 'color': AppColors.info},
+      {'id': 'ytm', 'label': 'YouTube Music', 'icon': Icons.play_circle_fill, 'color': AppColors.primary},
       {'id': 'musicbrainz', 'label': 'MusicBrainz', 'icon': Icons.album, 'color': const Color(0xFFBA68C8)},
       {'id': 'deezer', 'label': 'Deezer', 'icon': Icons.graphic_eq, 'color': const Color(0xFFFF007F)},
       {'id': 'itunes', 'label': 'Apple Music', 'icon': Icons.apple, 'color': const Color(0xFFFC3C44)},
@@ -478,15 +483,15 @@ class _MetadataEditorDialogState extends State<MetadataEditorDialog> {
                   _searchMusicBrainz();
                 }
               },
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: AppRadius.rXl,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: isSelected ? brandColor.withValues(alpha: 0.18) : const Color(0xFF14141A),
-                  borderRadius: BorderRadius.circular(20),
+                  color: isSelected ? brandColor.withValues(alpha: 0.18) : AppColors.surface,
+                  borderRadius: AppRadius.rXl,
                   border: Border.all(
-                    color: isSelected ? brandColor : Colors.white12,
+                    color: isSelected ? brandColor : AppColors.borderSubtle,
                     width: isSelected ? 1.5 : 1.0,
                   ),
                 ),
@@ -496,7 +501,7 @@ class _MetadataEditorDialogState extends State<MetadataEditorDialog> {
                     Icon(
                       icon,
                       size: 13,
-                      color: isSelected ? brandColor : Colors.white54,
+                      color: isSelected ? brandColor : AppColors.textMuted,
                     ),
                     const SizedBox(width: 5),
                     Text(
@@ -504,7 +509,7 @@ class _MetadataEditorDialogState extends State<MetadataEditorDialog> {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? Colors.white : Colors.white70,
+                        color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -627,13 +632,13 @@ class _MetadataEditorDialogState extends State<MetadataEditorDialog> {
     final url = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: AppColors.surfaceElevated,
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.dialog),
         title: const Row(
           children: [
-            Icon(Icons.link, color: Color(0xFF00B4D8), size: 20),
+            Icon(Icons.link, color: AppColors.info, size: 20),
             SizedBox(width: 8),
-            Text('Enter Image URL', style: TextStyle(color: Colors.white, fontSize: 16)),
+            Text('Enter Image URL', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
@@ -642,19 +647,21 @@ class _MetadataEditorDialogState extends State<MetadataEditorDialog> {
           children: [
             const Text(
               'Paste a direct link to any JPG or PNG image on the web:',
-              style: TextStyle(color: Colors.white60, fontSize: 12),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: controller,
               autofocus: true,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
               decoration: InputDecoration(
                 hintText: 'https://example.com/album-art.jpg',
-                hintStyle: const TextStyle(color: Colors.white38),
+                hintStyle: const TextStyle(color: AppColors.textMuted),
                 filled: true,
-                fillColor: const Color(0xFF121218),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                fillColor: AppColors.surface,
+                border: OutlineInputBorder(borderRadius: AppRadius.input, borderSide: const BorderSide(color: AppColors.borderSubtle)),
+                enabledBorder: OutlineInputBorder(borderRadius: AppRadius.input, borderSide: const BorderSide(color: AppColors.borderSubtle)),
+                focusedBorder: OutlineInputBorder(borderRadius: AppRadius.input, borderSide: const BorderSide(color: AppColors.primary)),
               ),
             ),
           ],
@@ -662,11 +669,11 @@ class _MetadataEditorDialogState extends State<MetadataEditorDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(null),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF00B4D8)),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.info, foregroundColor: Colors.white),
             child: const Text('Apply'),
           ),
         ],
@@ -805,769 +812,940 @@ class _MetadataEditorDialogState extends State<MetadataEditorDialog> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final hasFeatInArtist = _artistController.text.contains(RegExp(r'\b(?:ft\.|feat\.|featuring)\b', caseSensitive: false));
+  Widget _buildSectionBadge(String title, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md, bottom: AppSpacing.xs),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: AppColors.primary),
+          const SizedBox(width: AppSpacing.xs),
+          Flexible(
+            child: Text(
+              title,
+              style: AppTypography.label.copyWith(
+                color: AppColors.textSecondary,
+                letterSpacing: 1.2,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          const Expanded(child: Divider(color: AppColors.borderSubtle, height: 1)),
+        ],
+      ),
+    );
+  }
 
-    return Dialog(
-      backgroundColor: const Color(0xFF181820),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        width: 580,
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.88,
-        ),
-        padding: const EdgeInsets.all(24),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildFileInfoCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadius.card,
+        border: Border.all(color: AppColors.borderSubtle),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              // Title Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Icon(
+                widget.ytmUpload != null ? Icons.cloud_done_outlined : Icons.audio_file_outlined,
+                size: 14,
+                color: widget.ytmUpload != null ? AppColors.info : AppColors.textMuted,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  widget.ytmUpload != null ? widget.ytmUpload!.title : (widget.song?.filename ?? ''),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, fontFamily: 'monospace', color: AppColors.textPrimary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            widget.ytmUpload != null
+                ? 'YouTube Music Upload • ID: ${widget.ytmUpload!.videoId ?? widget.ytmUpload!.entityId}'
+                : (widget.song?.path ?? ''),
+            style: const TextStyle(fontSize: 10, color: AppColors.textMuted, fontFamily: 'monospace'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBasicInfoSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionBadge('BASIC INFORMATION', Icons.info_outline),
+        const SizedBox(height: AppSpacing.xs),
+        TextField(
+          controller: _titleController,
+          onSubmitted: (_) => _searchMusicBrainz(),
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+          decoration: InputDecoration(
+            labelText: 'Song Title *',
+            hintText: 'e.g. Uptown Girl',
+            isDense: true,
+            filled: true,
+            fillColor: AppColors.surface,
+            border: const OutlineInputBorder(borderRadius: AppRadius.input, borderSide: BorderSide(color: AppColors.borderSubtle)),
+            enabledBorder: const OutlineInputBorder(borderRadius: AppRadius.input, borderSide: BorderSide(color: AppColors.borderSubtle)),
+            focusedBorder: const OutlineInputBorder(borderRadius: AppRadius.input, borderSide: BorderSide(color: AppColors.primary)),
+            prefixIcon: const Icon(Icons.title, size: 18, color: AppColors.textMuted),
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.search, size: 18, color: AppColors.info),
+              tooltip: 'Search online with this title & artist',
+              onPressed: () => _searchMusicBrainz(),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        TextField(
+          controller: _artistController,
+          onSubmitted: (_) => _searchMusicBrainz(),
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+          decoration: InputDecoration(
+            labelText: 'Artist Name *',
+            hintText: 'e.g. Billy Joel',
+            isDense: true,
+            filled: true,
+            fillColor: AppColors.surface,
+            border: const OutlineInputBorder(borderRadius: AppRadius.input, borderSide: BorderSide(color: AppColors.borderSubtle)),
+            enabledBorder: const OutlineInputBorder(borderRadius: AppRadius.input, borderSide: BorderSide(color: AppColors.borderSubtle)),
+            focusedBorder: const OutlineInputBorder(borderRadius: AppRadius.input, borderSide: BorderSide(color: AppColors.primary)),
+            prefixIcon: const Icon(Icons.person_outline, size: 18, color: AppColors.textMuted),
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.search, size: 18, color: AppColors.info),
+              tooltip: 'Search online with this artist & title',
+              onPressed: () => _searchMusicBrainz(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTrackInfoSection(bool hasFeatInArtist) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionBadge('TRACK INFORMATION', Icons.library_music_outlined),
+        const SizedBox(height: AppSpacing.xs),
+        Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: TextField(
+                controller: _albumController,
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                decoration: const InputDecoration(
+                  labelText: 'Album (Optional)',
+                  hintText: 'e.g. An Innocent Man',
+                  isDense: true,
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(borderRadius: AppRadius.input, borderSide: BorderSide(color: AppColors.borderSubtle)),
+                  enabledBorder: OutlineInputBorder(borderRadius: AppRadius.input, borderSide: BorderSide(color: AppColors.borderSubtle)),
+                  focusedBorder: OutlineInputBorder(borderRadius: AppRadius.input, borderSide: BorderSide(color: AppColors.primary)),
+                  prefixIcon: Icon(Icons.album_outlined, size: 18, color: AppColors.textMuted),
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              flex: 1,
+              child: TextField(
+                controller: _trackNumController,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                decoration: const InputDecoration(
+                  labelText: 'Track #',
+                  hintText: '1',
+                  isDense: true,
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(borderRadius: AppRadius.input, borderSide: BorderSide(color: AppColors.borderSubtle)),
+                  enabledBorder: OutlineInputBorder(borderRadius: AppRadius.input, borderSide: BorderSide(color: AppColors.borderSubtle)),
+                  focusedBorder: OutlineInputBorder(borderRadius: AppRadius.input, borderSide: BorderSide(color: AppColors.primary)),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.info,
+                side: const BorderSide(color: AppColors.info),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
+              onPressed: () => _smartSplit(artistFirst: true),
+              icon: const Icon(Icons.auto_fix_high, size: 14),
+              label: const Text('Artist - Title', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+            ),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.info,
+                side: const BorderSide(color: AppColors.info),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
+              onPressed: () => _smartSplit(artistFirst: false),
+              icon: const Icon(Icons.auto_fix_high, size: 14),
+              label: const Text('Title - Artist', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+            ),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.textSecondary,
+                side: const BorderSide(color: AppColors.borderSubtle),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
+              onPressed: _swapArtistTitle,
+              icon: const Icon(Icons.swap_vert, size: 14),
+              label: const Text('Swap (⇄)', style: TextStyle(fontSize: 11)),
+            ),
+            if (hasFeatInArtist)
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.warning,
+                  side: const BorderSide(color: AppColors.warning),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                ),
+                onPressed: _normalizeFeaturedArtists,
+                icon: const Icon(Icons.drive_file_move_outline, size: 14),
+                label: const Text('Move ft. to Title', style: TextStyle(fontSize: 11)),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildArtworkSection() {
+    final hasCover = _customCoverBytes != null || (_selectedCoverUrl != null && _selectedCoverUrl!.isNotEmpty);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionBadge('ARTWORK', Icons.image_outlined),
+        const SizedBox(height: AppSpacing.xs),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: AppRadius.card,
+            border: Border.all(
+              color: hasCover ? AppColors.info.withValues(alpha: 0.3) : AppColors.borderSubtle,
+            ),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isCompact = constraints.maxWidth < 450;
+              final artWidget = Row(
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        widget.ytmUpload != null ? Icons.cloud_sync_outlined : Icons.edit_note,
-                        color: const Color(0xFFFF0000),
-                        size: 24,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        widget.ytmUpload != null ? 'Retag & Replace YTM Upload' : 'Edit Track Metadata',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                  ClipRRect(
+                    borderRadius: AppRadius.rSm,
+                    child: _customCoverBytes != null
+                        ? Image.memory(
+                            _customCoverBytes!,
+                            width: 56,
+                            height: 56,
+                            fit: BoxFit.cover,
+                          )
+                        : (_selectedCoverUrl != null && _selectedCoverUrl!.isNotEmpty)
+                            ? (_selectedCoverUrl!.startsWith('data:image/')
+                                ? Image.memory(
+                                    base64Decode(_selectedCoverUrl!.split(',')[1]),
+                                    width: 56,
+                                    height: 56,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.network(
+                                    _selectedCoverUrl!,
+                                    width: 56,
+                                    height: 56,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Container(
+                                      width: 56,
+                                      height: 56,
+                                      color: AppColors.surfaceElevated,
+                                      child: const Icon(Icons.broken_image, size: 22, color: AppColors.textMuted),
+                                    ),
+                                  ))
+                            : Container(
+                                width: 56,
+                                height: 56,
+                                color: AppColors.surfaceElevated,
+                                child: const Icon(Icons.album, size: 28, color: AppColors.textMuted),
+                              ),
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close, size: 20),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text('Cover Art', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: _customCoverBytes != null
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.surfaceElevated,
+                                        borderRadius: AppRadius.badge,
+                                      ),
+                                      child: const Text('Custom Image', style: TextStyle(fontSize: 10, color: AppColors.info, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                                    )
+                                  : (_selectedCoverUrl != null && _selectedCoverUrl!.isNotEmpty)
+                                      ? Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.success.withValues(alpha: 0.2),
+                                            borderRadius: AppRadius.badge,
+                                          ),
+                                          child: const Text('Attached', style: TextStyle(fontSize: 10, color: AppColors.success, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                                        )
+                                      : Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.warning.withValues(alpha: 0.2),
+                                            borderRadius: AppRadius.badge,
+                                          ),
+                                          child: const Text('Auto-fetches on upload', style: TextStyle(fontSize: 10, color: AppColors.warning), overflow: TextOverflow.ellipsis),
+                                        ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          hasCover
+                              ? 'Embedded into audio tags before upload.'
+                              : 'Searched & embedded automatically when uploaded.',
+                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
+              );
+
+              final actionButtons = Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      minimumSize: const Size(40, 30),
+                      side: const BorderSide(color: AppColors.info),
+                      foregroundColor: AppColors.info,
+                    ),
+                    onPressed: _pickCustomImage,
+                    icon: const Icon(Icons.file_upload_outlined, size: 14),
+                    label: const Text('File', style: TextStyle(fontSize: 11)),
+                  ),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      minimumSize: const Size(40, 30),
+                      side: const BorderSide(color: AppColors.borderSubtle),
+                      foregroundColor: AppColors.textSecondary,
+                    ),
+                    onPressed: _pasteCoverUrl,
+                    icon: const Icon(Icons.link, size: 14),
+                    label: const Text('URL', style: TextStyle(fontSize: 11)),
+                  ),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      minimumSize: const Size(40, 30),
+                      side: const BorderSide(color: AppColors.borderSubtle),
+                      foregroundColor: AppColors.textSecondary,
+                    ),
+                    onPressed: _isSearchingCover ? null : _fetchCoverArt,
+                    icon: _isSearchingCover
+                        ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.info))
+                        : const Icon(Icons.image_search, size: 14),
+                    label: const Text('Fetch', style: TextStyle(fontSize: 11)),
+                  ),
+                  if (hasCover)
+                    IconButton(
+                      tooltip: 'Remove artwork',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                      icon: const Icon(Icons.close, size: 16, color: AppColors.textMuted),
+                      hoverColor: AppColors.error.withValues(alpha: 0.1),
+                      onPressed: _removeCoverArt,
+                    ),
+                ],
+              );
+
+              if (isCompact) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    artWidget,
+                    const SizedBox(height: AppSpacing.sm),
+                    actionButtons,
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: artWidget),
+                  const SizedBox(width: AppSpacing.xs),
+                  actionButtons,
+                ],
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMatchCard(MusicBrainzMatch match) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: AppRadius.card,
+        border: Border.all(color: AppColors.borderSubtle),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: AppRadius.rXs,
+            child: (match.coverUrl != null && match.coverUrl!.isNotEmpty)
+                ? Image.network(
+                    match.coverUrl!,
+                    width: 44,
+                    height: 44,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      width: 44,
+                      height: 44,
+                      color: AppColors.surface,
+                      child: const Icon(Icons.album, size: 22, color: AppColors.textMuted),
+                    ),
+                  )
+                : Container(
+                    width: 44,
+                    height: 44,
+                    color: AppColors.surface,
+                    child: const Icon(Icons.album, size: 22, color: AppColors.textMuted),
+                  ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        match.title,
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: match.source == 'YouTube Music'
+                            ? AppColors.primary.withValues(alpha: 0.2)
+                            : match.source == 'Deezer'
+                                ? AppColors.streaming.withValues(alpha: 0.2)
+                                : AppColors.info.withValues(alpha: 0.2),
+                        borderRadius: AppRadius.badge,
+                      ),
+                      child: Text(
+                        match.source,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: match.source == 'YouTube Music'
+                              ? AppColors.primary
+                              : match.source == 'Deezer'
+                                  ? AppColors.streaming
+                                  : AppColors.info,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: match.score >= 90
+                            ? AppColors.success.withValues(alpha: 0.2)
+                            : AppColors.warning.withValues(alpha: 0.2),
+                        borderRadius: AppRadius.badge,
+                      ),
+                      child: Text(
+                        '${match.score}%',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: match.score >= 90 ? AppColors.success : AppColors.warning,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Artist: ${match.artist}',
+                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (match.album != null && match.album!.isNotEmpty)
+                  Text(
+                    'Album: ${match.album}${match.releaseDate != null ? ' (${match.releaseDate!.split('-')[0]})' : ''}${match.trackNumber != null ? ' • Track #${match.trackNumber}' : ''}',
+                    style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            children: [
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: const Size(54, 26),
+                  side: const BorderSide(color: AppColors.info),
+                  foregroundColor: AppColors.info,
+                ),
+                onPressed: () => _applyMbMatch(match),
+                child: const Text('Apply', style: TextStyle(fontSize: 11)),
               ),
               const SizedBox(height: 4),
-
-              // Filename Info Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF14141A),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white10),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: const Size(54, 26),
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                onPressed: () => _applyMbMatch(match, andUpload: true),
+                child: const Text('Upload', style: TextStyle(fontSize: 11)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildYtmSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionBadge('YOUTUBE MUSIC', Icons.cloud_queue_outlined),
+        const SizedBox(height: AppSpacing.xs),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: AppRadius.input,
+            border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchQueryController,
+                  onSubmitted: (val) => _searchMusicBrainz(query: val),
+                  style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+                  decoration: const InputDecoration(
+                    hintText: 'Search online metadata (e.g. Billy Joel - Uptown Girl)',
+                    hintStyle: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                    prefixIcon: Icon(Icons.search, size: 18, color: AppColors.info),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    isDense: true,
+                  ),
+                ),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.info,
+                  foregroundColor: Colors.white,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.horizontal(right: Radius.circular(AppRadius.sm)),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                onPressed: _isSearchingMb ? null : () => _searchMusicBrainz(query: _searchQueryController.text.trim()),
+                child: _isSearchingMb
+                    ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Search', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _buildProviderChips(),
+        if (_isSearchingMb) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: AppRadius.card,
+              border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.info)),
+                const SizedBox(width: 10),
+                Text(_getProviderLoadingText(), style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              ],
+            ),
+          ),
+        ],
+        if (_mbSearchMessage != null && !_isSearchingMb) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.1),
+              borderRadius: AppRadius.card,
+              border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, size: 14, color: AppColors.warning),
+                const SizedBox(width: 8),
+                Expanded(child: Text(_mbSearchMessage!, style: const TextStyle(fontSize: 11, color: AppColors.warning))),
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.close, size: 14, color: AppColors.textMuted),
+                  onPressed: () => setState(() => _mbSearchMessage = null),
+                ),
+              ],
+            ),
+          ),
+        ],
+        if (_mbMatches != null && _mbMatches!.isNotEmpty && !_isSearchingMb) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: AppRadius.card,
+              border: Border.all(color: AppColors.info.withValues(alpha: 0.4)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
-                        Icon(
-                          widget.ytmUpload != null ? Icons.cloud_done_outlined : Icons.audio_file_outlined,
-                          size: 14,
-                          color: widget.ytmUpload != null ? const Color(0xFF00B4D8) : Colors.grey,
-                        ),
+                        const Icon(Icons.travel_explore, size: 14, color: AppColors.info),
                         const SizedBox(width: 6),
-                        Expanded(
+                        Text(
+                          'Online Matches (${_mbMatches!.length})',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.info),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      icon: const Icon(Icons.close, size: 14, color: AppColors.textMuted),
+                      onPressed: () => setState(() => _mbMatches = null),
+                      tooltip: 'Close matches',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ..._mbMatches!.map((match) => _buildMatchCard(match)),
+              ],
+            ),
+          ),
+        ],
+        if (_isSaving && widget.ytmUpload != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.info.withValues(alpha: 0.1),
+              borderRadius: AppRadius.card,
+              border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+            ),
+            child: const Row(
+              children: [
+                SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.info)),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Downloading audio from YouTube Music, applying tags, and replacing upload... This may take up to a minute.',
+                    style: TextStyle(fontSize: 11, color: AppColors.info),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildBottomActions() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 460;
+        if (isNarrow) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (widget.trackVideoId != null) ...[
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    onPressed: _isSaving ? null : () => _saveMetadata(),
+                    icon: _isSaving
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.cloud_download, size: 16),
+                    label: Text(_isSaving ? 'Resolving & Uploading...' : 'Download & Upload with Match'),
+                  ),
+                ] else if (widget.ytmUpload != null) ...[
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    onPressed: _isSaving ? null : () => _saveMetadata(),
+                    icon: _isSaving
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.published_with_changes, size: 16),
+                    label: Text(_isSaving ? 'Replacing on YTM...' : 'Retag & Replace on YTM'),
+                  ),
+                ] else ...[
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: _isSaving ? null : () => _saveMetadata(enqueueUpload: true),
+                    icon: _isSaving
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.cloud_upload, size: 16),
+                    label: const Text('Save & Upload'),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  FilledButton.tonal(
+                    onPressed: _isSaving ? null : () => _saveMetadata(enqueueUpload: false),
+                    child: _isSaving
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Text('Save Metadata'),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.xs),
+                OutlinedButton(
+                  onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                    side: const BorderSide(color: AppColors.borderSubtle),
+                  ),
+                  child: const Text('Cancel'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton(
+                onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                  side: const BorderSide(color: AppColors.borderSubtle),
+                ),
+                child: const Text('Cancel'),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              if (widget.trackVideoId != null) ...[
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  onPressed: _isSaving ? null : () => _saveMetadata(),
+                  icon: _isSaving
+                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.cloud_download, size: 16),
+                  label: Text(_isSaving ? 'Resolving & Uploading...' : 'Download & Upload with Match'),
+                ),
+              ] else if (widget.ytmUpload != null) ...[
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  onPressed: _isSaving ? null : () => _saveMetadata(),
+                  icon: _isSaving
+                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.published_with_changes, size: 16),
+                  label: Text(_isSaving ? 'Replacing on YTM...' : 'Retag & Replace on YTM'),
+                ),
+              ] else ...[
+                FilledButton.tonal(
+                  onPressed: _isSaving ? null : () => _saveMetadata(enqueueUpload: false),
+                  child: _isSaving
+                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Save Metadata'),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: _isSaving ? null : () => _saveMetadata(enqueueUpload: true),
+                  icon: _isSaving
+                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.cloud_upload, size: 16),
+                  label: const Text('Save & Upload'),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasFeatInArtist = _artistController.text.contains(RegExp(r'\b(?:ft\.|feat\.|featuring)\b', caseSensitive: false));
+    final isMobile = ResponsiveLayout.isMobile(context) || MediaQuery.of(context).size.width < 600;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return Dialog(
+      backgroundColor: AppColors.surfaceElevated,
+      insetPadding: isMobile
+          ? const EdgeInsets.all(8)
+          : const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+      shape: RoundedRectangleBorder(
+        borderRadius: isMobile ? AppRadius.card : AppRadius.dialog,
+      ),
+      child: Container(
+        width: isMobile ? screenWidth : 620,
+        constraints: BoxConstraints(
+          maxHeight: isMobile ? screenHeight * 0.96 : screenHeight * 0.9,
+          maxWidth: isMobile ? screenWidth : 620,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Pinned Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.xs, AppSpacing.xs),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(
+                          widget.ytmUpload != null ? Icons.cloud_sync_outlined : Icons.edit_note,
+                          color: AppColors.primary,
+                          size: 22,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Flexible(
                           child: Text(
-                            widget.ytmUpload != null ? widget.ytmUpload!.title : (widget.song?.filename ?? ''),
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, fontFamily: 'monospace'),
-                            maxLines: 1,
+                            widget.ytmUpload != null ? 'Retag & Replace YTM Upload' : 'Edit Track Metadata',
+                            style: AppTypography.h3.copyWith(color: AppColors.textPrimary),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.ytmUpload != null
-                          ? 'YouTube Music Upload • ID: ${widget.ytmUpload!.videoId ?? widget.ytmUpload!.entityId}'
-                          : (widget.song?.path ?? ''),
-                      style: TextStyle(fontSize: 10, color: Colors.grey[500], fontFamily: 'monospace'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // Smart Split & Lookup Controls
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF3EA6FF),
-                      side: const BorderSide(color: Color(0xFF3EA6FF)),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    ),
-                    onPressed: () => _smartSplit(artistFirst: true),
-                    icon: const Icon(Icons.auto_fix_high, size: 15),
-                    label: const Text('Artist - Title', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF3EA6FF),
-                      side: const BorderSide(color: Color(0xFF3EA6FF)),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    ),
-                    onPressed: () => _smartSplit(artistFirst: false),
-                    icon: const Icon(Icons.auto_fix_high, size: 15),
-                    label: const Text('Title - Artist', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  ),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white70,
-                      side: const BorderSide(color: Colors.white24),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    ),
-                    onPressed: _swapArtistTitle,
-                    icon: const Icon(Icons.swap_vert, size: 15),
-                    label: const Text('Swap (⇄)', style: TextStyle(fontSize: 12)),
-                  ),
-                  if (hasFeatInArtist)
-                    OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.orangeAccent,
-                        side: const BorderSide(color: Colors.orangeAccent),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      ),
-                      onPressed: _normalizeFeaturedArtists,
-                      icon: const Icon(Icons.drive_file_move_outline, size: 15),
-                      label: const Text('Move ft. to Title', style: TextStyle(fontSize: 12)),
-                    ),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF00B4D8),
-                      side: const BorderSide(color: Color(0xFF00B4D8)),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    ),
-                    onPressed: _isSearchingMb ? null : () => _searchMusicBrainz(),
-                    icon: _isSearchingMb
-                        ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00B4D8)))
-                        : const Icon(Icons.search, size: 15),
-                    label: const Text('Search Online', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, size: 20, color: AppColors.textMuted),
+                    tooltip: 'Close',
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+            ),
+            const Divider(color: AppColors.borderSubtle, height: 1),
 
-              // Dedicated Search Bar
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF14141A),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF00B4D8).withValues(alpha: 0.3)),
-                ),
-                child: Row(
+            // Scrollable Content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _searchQueryController,
-                        onSubmitted: (val) => _searchMusicBrainz(query: val),
-                        style: const TextStyle(fontSize: 13),
-                        decoration: InputDecoration(
-                          hintText: 'Search online metadata (e.g. Billy Joel - Uptown Girl)',
-                          hintStyle: const TextStyle(fontSize: 12, color: Colors.white38),
-                          prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF00B4D8)),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          isDense: true,
-                        ),
-                      ),
-                    ),
-                    FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF00B4D8),
-                        foregroundColor: Colors.white,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.horizontal(right: Radius.circular(8)),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                      onPressed: _isSearchingMb ? null : () => _searchMusicBrainz(query: _searchQueryController.text.trim()),
-                      child: _isSearchingMb
-                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Text('Search', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // Provider Filter Chips
-              _buildProviderChips(),
-              const SizedBox(height: 12),
-
-              // MusicBrainz Loading Indicator
-              if (_isSearchingMb) ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF14141A),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF00B4D8).withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00B4D8))),
-                      const SizedBox(width: 10),
-                      Text(_getProviderLoadingText(), style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-              ],
-
-              // MusicBrainz Search Feedback
-              if (_mbSearchMessage != null && !_isSearchingMb) ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.info_outline, size: 14, color: Colors.amber),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(_mbSearchMessage!, style: const TextStyle(fontSize: 11, color: Colors.amber))),
-                      IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        icon: const Icon(Icons.close, size: 14, color: Colors.white54),
-                        onPressed: () => setState(() => _mbSearchMessage = null),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-              ],
-
-              // MusicBrainz Candidate List
-              if (_mbMatches != null && _mbMatches!.isNotEmpty && !_isSearchingMb) ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF14141A),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF00B4D8).withValues(alpha: 0.4)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.travel_explore, size: 14, color: Color(0xFF00B4D8)),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Online Matches (${_mbMatches!.length})',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF00B4D8)),
-                              ),
-                            ],
-                          ),
-                          IconButton(
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            icon: const Icon(Icons.close, size: 14, color: Colors.white54),
-                            onPressed: () => setState(() => _mbMatches = null),
-                            tooltip: 'Close matches',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      ..._mbMatches!.map((match) {
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1E1E26),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.white10),
-                          ),
-                          child: Row(
-                            children: [
-                              // Candidate Cover Art Thumbnail
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: (match.coverUrl != null && match.coverUrl!.isNotEmpty)
-                                    ? Image.network(
-                                        match.coverUrl!,
-                                        width: 44,
-                                        height: 44,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) => Container(
-                                          width: 44,
-                                          height: 44,
-                                          color: const Color(0xFF14141C),
-                                          child: const Icon(Icons.album, size: 22, color: Colors.white38),
-                                        ),
-                                      )
-                                    : Container(
-                                        width: 44,
-                                        height: 44,
-                                        color: const Color(0xFF14141C),
-                                        child: const Icon(Icons.album, size: 22, color: Colors.white38),
-                                      ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            match.title,
-                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                          decoration: BoxDecoration(
-                                            color: match.source == 'YouTube Music'
-                                                ? const Color(0xFFFF0000).withValues(alpha: 0.2)
-                                                : match.source == 'Deezer'
-                                                    ? const Color(0xFFA259FF).withValues(alpha: 0.2)
-                                                    : const Color(0xFF00B4D8).withValues(alpha: 0.2),
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            match.source,
-                                            style: TextStyle(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.bold,
-                                              color: match.source == 'YouTube Music'
-                                                  ? const Color(0xFFFF6B6B)
-                                                  : match.source == 'Deezer'
-                                                      ? const Color(0xFFD3A4FF)
-                                                      : const Color(0xFF64DFDF),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                          decoration: BoxDecoration(
-                                            color: match.score >= 90 ? Colors.green.withValues(alpha: 0.2) : Colors.amber.withValues(alpha: 0.2),
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            '${match.score}%',
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                              color: match.score >= 90 ? Colors.greenAccent : Colors.amberAccent,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Artist: ${match.artist}',
-                                      style: const TextStyle(fontSize: 11, color: Colors.white70),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    if (match.album != null && match.album!.isNotEmpty)
-                                      Text(
-                                        'Album: ${match.album}${match.releaseDate != null ? ' (${match.releaseDate!.split('-')[0]})' : ''}${match.trackNumber != null ? ' • Track #${match.trackNumber}' : ''}',
-                                        style: TextStyle(fontSize: 10, color: Colors.grey[400]),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Column(
-                                children: [
-                                  OutlinedButton(
-                                    style: OutlinedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      minimumSize: const Size(54, 26),
-                                      side: const BorderSide(color: Color(0xFF00B4D8)),
-                                      foregroundColor: const Color(0xFF00B4D8),
-                                    ),
-                                    onPressed: () => _applyMbMatch(match),
-                                    child: const Text('Apply', style: TextStyle(fontSize: 11)),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  FilledButton(
-                                    style: FilledButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      minimumSize: const Size(54, 26),
-                                      backgroundColor: const Color(0xFFFF0000),
-                                      foregroundColor: Colors.white,
-                                    ),
-                                    onPressed: () => _applyMbMatch(match, andUpload: true),
-                                    child: const Text('Upload', style: TextStyle(fontSize: 11)),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-              ],
-
-              // Cover Artwork Preview Card
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF14141A),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: (_customCoverBytes != null || (_selectedCoverUrl != null && _selectedCoverUrl!.isNotEmpty))
-                        ? const Color(0xFF00B4D8).withValues(alpha: 0.3)
-                        : Colors.white10,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: _customCoverBytes != null
-                          ? Image.memory(
-                              _customCoverBytes!,
-                              width: 56,
-                              height: 56,
-                              fit: BoxFit.cover,
-                            )
-                          : (_selectedCoverUrl != null && _selectedCoverUrl!.isNotEmpty)
-                              ? (_selectedCoverUrl!.startsWith('data:image/')
-                                  ? Image.memory(
-                                      base64Decode(_selectedCoverUrl!.split(',')[1]),
-                                      width: 56,
-                                      height: 56,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Image.network(
-                                      _selectedCoverUrl!,
-                                      width: 56,
-                                      height: 56,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) => Container(
-                                        width: 56,
-                                        height: 56,
-                                        color: const Color(0xFF22222E),
-                                        child: const Icon(Icons.broken_image, size: 22, color: Colors.white38),
-                                      ),
-                                    ))
-                              : Container(
-                                  width: 56,
-                                  height: 56,
-                                  color: const Color(0xFF22222E),
-                                  child: const Icon(Icons.album, size: 28, color: Colors.white24),
-                                ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Text('Cover Art', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
-                              const SizedBox(width: 6),
-                              if (_customCoverBytes != null)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: Colors.cyan.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Text('Custom Image', style: TextStyle(fontSize: 10, color: Colors.cyanAccent, fontWeight: FontWeight.bold)),
-                                )
-                              else if (_selectedCoverUrl != null && _selectedCoverUrl!.isNotEmpty)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Text('Attached', style: TextStyle(fontSize: 10, color: Colors.greenAccent, fontWeight: FontWeight.bold)),
-                                )
-                              else
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Text('Auto-fetches on upload', style: TextStyle(fontSize: 10, color: Colors.amberAccent)),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            (_customCoverBytes != null || (_selectedCoverUrl != null && _selectedCoverUrl!.isNotEmpty))
-                                ? 'Cover art will be embedded into audio tags before uploading.'
-                                : 'Will be automatically searched and embedded when uploaded.',
-                            style: const TextStyle(fontSize: 11, color: Colors.white60),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-
-                    // Custom Image Upload Button
-                    OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        minimumSize: const Size(50, 30),
-                        side: const BorderSide(color: Color(0xFF00B4D8)),
-                        foregroundColor: const Color(0xFF00B4D8),
-                      ),
-                      onPressed: _pickCustomImage,
-                      icon: const Icon(Icons.file_upload_outlined, size: 14),
-                      label: const Text('Upload Img', style: TextStyle(fontSize: 11)),
-                    ),
-                    const SizedBox(width: 6),
-
-                    // Paste URL Button
-                    OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        minimumSize: const Size(44, 30),
-                        side: const BorderSide(color: Colors.white24),
-                        foregroundColor: Colors.white70,
-                      ),
-                      onPressed: _pasteCoverUrl,
-                      icon: const Icon(Icons.link, size: 14),
-                      label: const Text('URL', style: TextStyle(fontSize: 11)),
-                    ),
-                    const SizedBox(width: 6),
-
-                    // Fetch Art Button
-                    OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        minimumSize: const Size(44, 30),
-                        side: const BorderSide(color: Colors.white24),
-                        foregroundColor: Colors.white70,
-                      ),
-                      onPressed: _isSearchingCover ? null : _fetchCoverArt,
-                      icon: _isSearchingCover
-                          ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00B4D8)))
-                          : const Icon(Icons.image_search, size: 14),
-                      label: const Text('Fetch', style: TextStyle(fontSize: 11)),
-                    ),
-
-                    if (_customCoverBytes != null || (_selectedCoverUrl != null && _selectedCoverUrl!.isNotEmpty)) ...[
-                      const SizedBox(width: 4),
-                      IconButton(
-                        tooltip: 'Remove artwork',
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                        icon: const Icon(Icons.close, size: 16, color: Colors.white38),
-                        hoverColor: Colors.redAccent.withValues(alpha: 0.1),
-                        onPressed: _removeCoverArt,
-                      ),
+                    _buildFileInfoCard(),
+                    _buildBasicInfoSection(),
+                    _buildTrackInfoSection(hasFeatInArtist),
+                    _buildArtworkSection(),
+                    _buildYtmSection(),
+                    if (_errorMessage != null) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      Text(_errorMessage!, style: const TextStyle(color: AppColors.error, fontSize: 12)),
                     ],
                   ],
                 ),
               ),
-              const SizedBox(height: 14),
+            ),
 
-              // Title Field
-              TextField(
-                controller: _titleController,
-                onSubmitted: (_) => _searchMusicBrainz(),
-                decoration: InputDecoration(
-                  labelText: 'Song Title *',
-                  hintText: 'e.g. Uptown Girl',
-                  isDense: true,
-                  filled: true,
-                  fillColor: const Color(0xFF14141A),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  prefixIcon: const Icon(Icons.title, size: 18),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.search, size: 18, color: Color(0xFF00B4D8)),
-                    tooltip: 'Search online with this title & artist',
-                    onPressed: () => _searchMusicBrainz(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
+            const Divider(color: AppColors.borderSubtle, height: 1),
 
-              // Artist Field
-              TextField(
-                controller: _artistController,
-                onSubmitted: (_) => _searchMusicBrainz(),
-                decoration: InputDecoration(
-                  labelText: 'Artist Name *',
-                  hintText: 'e.g. Billy Joel',
-                  isDense: true,
-                  filled: true,
-                  fillColor: const Color(0xFF14141A),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  prefixIcon: const Icon(Icons.person_outline, size: 18),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.search, size: 18, color: Color(0xFF00B4D8)),
-                    tooltip: 'Search online with this artist & title',
-                    onPressed: () => _searchMusicBrainz(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Album & Track # Row
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: TextField(
-                      controller: _albumController,
-                      decoration: InputDecoration(
-                        labelText: 'Album (Optional)',
-                        hintText: 'e.g. Masterpiece of Mind',
-                        isDense: true,
-                        filled: true,
-                        fillColor: const Color(0xFF14141A),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        prefixIcon: const Icon(Icons.album_outlined, size: 18),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 1,
-                    child: TextField(
-                      controller: _trackNumController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: 'Track #',
-                        hintText: '1',
-                        isDense: true,
-                        filled: true,
-                        fillColor: const Color(0xFF14141A),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              if (_errorMessage != null) ...[
-                const SizedBox(height: 12),
-                Text(_errorMessage!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
-              ],
-
-              if (_isSaving && widget.ytmUpload != null) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF00B4D8).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF00B4D8).withValues(alpha: 0.3)),
-                  ),
-                  child: const Row(
-                    children: [
-                      SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00B4D8))),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Downloading audio from YouTube Music, applying tags, and replacing upload... This may take up to a minute.',
-                          style: TextStyle(fontSize: 11, color: Color(0xFF00B4D8)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-
-              const SizedBox(height: 20),
-
-              // Bottom Actions
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  OutlinedButton(
-                    onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
-                    child: const Text('Cancel'),
-                  ),
-                  const SizedBox(width: 10),
-                  if (widget.trackVideoId != null) ...[
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF0000),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                      onPressed: _isSaving ? null : () => _saveMetadata(),
-                      icon: _isSaving
-                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.cloud_download, size: 16),
-                      label: Text(_isSaving ? 'Resolving & Uploading...' : 'Download & Upload with Match'),
-                    ),
-                  ] else if (widget.ytmUpload != null) ...[
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF0000),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                      onPressed: _isSaving ? null : () => _saveMetadata(),
-                      icon: _isSaving
-                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.published_with_changes, size: 16),
-                      label: Text(_isSaving ? 'Replacing on YTM...' : 'Retag & Replace on YTM'),
-                    ),
-                  ] else ...[
-                    FilledButton.tonal(
-                      onPressed: _isSaving ? null : () => _saveMetadata(enqueueUpload: false),
-                      child: _isSaving
-                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Save Metadata'),
-                    ),
-                    const SizedBox(width: 10),
-                    FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF0000),
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: _isSaving ? null : () => _saveMetadata(enqueueUpload: true),
-                      child: _isSaving
-                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Row(
-                              children: [
-                                Icon(Icons.cloud_upload, size: 16),
-                                SizedBox(width: 6),
-                                Text('Save & Upload'),
-                              ],
-                            ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ),
+            // Pinned Bottom Actions
+            _buildBottomActions(),
+          ],
         ),
       ),
     );
   }
 }
-

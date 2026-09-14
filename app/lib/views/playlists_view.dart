@@ -83,7 +83,7 @@ class _PlaylistsViewState extends State<PlaylistsView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Playlist sync completed: ${status.completedTracks} uploaded, ${status.failedTracks} failed.'),
-                backgroundColor: status.failedTracks > 0 ? Colors.amber[800] : Colors.green,
+                backgroundColor: status.failedTracks > 0 ? AppColors.warning : AppColors.success,
               ),
             );
           }
@@ -175,10 +175,10 @@ class _PlaylistsViewState extends State<PlaylistsView> {
         context: context,
         builder: (ctx) => StatefulBuilder(
           builder: (ctx, setDlgState) => AlertDialog(
-            backgroundColor: const Color(0xFF1E1E28),
+            backgroundColor: AppColors.surfaceElevated,
             title: const Row(
               children: [
-                Icon(Icons.family_restroom, color: Color(0xFF8A2387)),
+                Icon(Icons.family_restroom, color: AppColors.primary),
                 SizedBox(width: 10),
                 Text('Upload Missing Tracks to Family'),
               ],
@@ -191,14 +191,14 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                 children: [
                   const Text(
                     'Select which accounts should receive the uploaded songs in their cloud locker:',
-                    style: TextStyle(fontSize: 13, color: Colors.white70),
+                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 16),
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF14141B),
+                      color: AppColors.surface,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      border: Border.all(color: AppColors.borderSubtle),
                     ),
                     child: Column(
                       children: permitted.map((acc) {
@@ -206,23 +206,23 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                         return CheckboxListTile(
                           dense: true,
                           value: isChecked,
-                          activeColor: const Color(0xFF8A2387),
+                          activeColor: AppColors.primary,
                           title: Row(
                             children: [
                               Text(acc.username, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                               if (acc.accountName != null && acc.accountName!.isNotEmpty) ...[
                                 const SizedBox(width: 8),
-                                Text('(${acc.accountName})', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                Text('(${acc.accountName})', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
                               ],
                               if (acc.isSelf) ...[
                                 const SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Colors.purple.withValues(alpha: 0.2),
+                                    color: AppColors.primaryMuted,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: const Text('You', style: TextStyle(fontSize: 10, color: Colors.purpleAccent, fontWeight: FontWeight.bold)),
+                                  child: const Text('You', style: TextStyle(fontSize: 10, color: AppColors.primaryLight, fontWeight: FontWeight.bold)),
                                 ),
                               ],
                             ],
@@ -253,8 +253,8 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                 icon: const Icon(Icons.cloud_upload, size: 16),
                 label: const Text('Start Upload Sync'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8A2387),
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.textPrimary,
                 ),
               ),
             ],
@@ -277,7 +277,7 @@ class _PlaylistsViewState extends State<PlaylistsView> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Started background sync for $queued missing tracks across selected accounts!'),
-              backgroundColor: const Color(0xFF8A2387),
+              backgroundColor: AppColors.primary,
             ),
           );
           _startSyncPolling();
@@ -292,7 +292,7 @@ class _PlaylistsViewState extends State<PlaylistsView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Sync error: ${e.toString().replaceFirst('Exception: ', '')}'),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -337,7 +337,7 @@ class _PlaylistsViewState extends State<PlaylistsView> {
             content: Text(alreadyEx
                 ? '"${track.title}" is already in your YouTube Music locker!'
                 : 'Downloaded, tagged, and uploaded "${track.title}" to YouTube Music!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
           ),
         );
       }
@@ -349,7 +349,7 @@ class _PlaylistsViewState extends State<PlaylistsView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Download failed: ${e.toString().replaceFirst('Exception: ', '')}'),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -365,10 +365,10 @@ class _PlaylistsViewState extends State<PlaylistsView> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFF1E1E28),
+          backgroundColor: AppColors.surfaceElevated,
           title: const Row(
             children: [
-              Icon(Icons.link, color: Colors.blueAccent),
+              Icon(Icons.link, color: AppColors.info),
               SizedBox(width: 8),
               Text('Import YouTube Playlist'),
             ],
@@ -379,7 +379,7 @@ class _PlaylistsViewState extends State<PlaylistsView> {
             children: [
               const Text(
                 'Enter any YouTube or YouTube Music playlist URL (public or unlisted) to audit and download missing tracks.',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -398,14 +398,14 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                     SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
                     SizedBox(width: 12),
                     Expanded(
-                      child: Text('Extracting playlist tracks via yt-dlp...', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      child: Text('Extracting playlist tracks via yt-dlp...', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
                     ),
                   ],
                 ),
               ],
               if (importError != null) ...[
                 const SizedBox(height: 12),
-                Text(importError!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                Text(importError!, style: const TextStyle(color: AppColors.error, fontSize: 12)),
               ],
             ],
           ),
@@ -460,10 +460,10 @@ class _PlaylistsViewState extends State<PlaylistsView> {
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E28),
+        backgroundColor: AppColors.surfaceElevated,
         title: const Row(
           children: [
-            Icon(Icons.sync_alt, color: Colors.tealAccent),
+            Icon(Icons.sync_alt, color: AppColors.info),
             SizedBox(width: 10),
             Text('Active Locker Replicas'),
           ],
@@ -471,28 +471,29 @@ class _PlaylistsViewState extends State<PlaylistsView> {
         content: SizedBox(
           width: 500,
           child: _replicatedPlaylists.isEmpty
-              ? const Text('No active replicas configured yet.', style: TextStyle(color: Colors.grey))
+              ? const Text('No active replicas configured yet.', style: TextStyle(color: AppColors.textMuted))
               : ListView.separated(
                   shrinkWrap: true,
                   itemCount: _replicatedPlaylists.length,
-                  separatorBuilder: (context, index) => const Divider(color: Colors.white10),
+                  separatorBuilder: (context, index) => const Divider(color: AppColors.borderSubtle),
                   itemBuilder: (ctx, idx) {
                     final r = _replicatedPlaylists[idx];
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.queue_music, color: Colors.tealAccent),
+                      leading: const Icon(Icons.queue_music, color: AppColors.info),
                       title: Text(r.sourcePlaylistName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text('Replica: ${r.destinationPlaylistName}', style: TextStyle(fontSize: 12, color: Colors.grey[400])),
+                      subtitle: Text('Replica: ${r.destinationPlaylistName}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                       trailing: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(ctx);
                           _openReplicationModal(r);
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00897B),
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.textPrimary,
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         ),
-                        child: const Text('Manage', style: TextStyle(fontSize: 12, color: Colors.white)),
+                        child: const Text('Manage', style: TextStyle(fontSize: 12, color: AppColors.textPrimary)),
                       ),
                     );
                   },
@@ -535,10 +536,10 @@ class _PlaylistsViewState extends State<PlaylistsView> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFF1E1E28),
+          backgroundColor: AppColors.surfaceElevated,
           title: const Row(
             children: [
-              Icon(Icons.copy_all, color: Color(0xFF0288D1)),
+              Icon(Icons.copy_all, color: AppColors.info),
               SizedBox(width: 10),
               Text('Create 1:1 Locker Replica'),
             ],
@@ -552,24 +553,24 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0288D1).withValues(alpha: 0.1),
+                    color: AppColors.infoBg,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF0288D1).withValues(alpha: 0.3)),
+                    border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
                   ),
                   child: const Text(
                     'Creates an automated YouTube Music playlist containing ONLY songs verified in your Upload Locker, in exact 1:1 source order.',
-                    style: TextStyle(fontSize: 13, color: Colors.white70),
+                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Source Playlist', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                const Text('Source Playlist', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
                 const SizedBox(height: 4),
                 Text(
                   playlist.title,
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
-                const Text('Destination Replica Name', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                const Text('Destination Replica Name', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
                 const SizedBox(height: 4),
                 TextField(
                   controller: destNameController,
@@ -583,17 +584,17 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                   const SizedBox(height: 16),
                   const Row(
                     children: [
-                      Icon(Icons.family_restroom, size: 16, color: Colors.purpleAccent),
+                      Icon(Icons.family_restroom, size: 16, color: AppColors.primaryLight),
                       SizedBox(width: 6),
-                      Text('Target Accounts (Upload & Replicate to)', style: TextStyle(fontSize: 12, color: Colors.purpleAccent, fontWeight: FontWeight.bold)),
+                      Text('Target Accounts (Upload & Replicate to)', style: TextStyle(fontSize: 12, color: AppColors.primaryLight, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF14141B),
+                      color: AppColors.surface,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      border: Border.all(color: AppColors.borderSubtle),
                     ),
                     child: Column(
                       children: permittedAccounts.map((acc) {
@@ -601,23 +602,23 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                         return CheckboxListTile(
                           dense: true,
                           value: isChecked,
-                          activeColor: const Color(0xFF0288D1),
+                          activeColor: AppColors.info,
                           title: Row(
                             children: [
                               Text(acc.username, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                               if (acc.accountName != null && acc.accountName!.isNotEmpty) ...[
                                 const SizedBox(width: 8),
-                                Text('(${acc.accountName})', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                Text('(${acc.accountName})', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
                               ],
                               if (acc.isSelf) ...[
                                 const SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Colors.blueAccent.withValues(alpha: 0.2),
+                                    color: AppColors.infoBg,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: const Text('You', style: TextStyle(fontSize: 10, color: Colors.lightBlueAccent, fontWeight: FontWeight.bold)),
+                                  child: const Text('You', style: TextStyle(fontSize: 10, color: AppColors.info, fontWeight: FontWeight.bold)),
                                 ),
                               ],
                             ],
@@ -640,14 +641,14 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                     dense: true,
                     contentPadding: EdgeInsets.zero,
                     value: uploadMissingToTargets,
-                    activeColor: const Color(0xFF8A2387),
+                    activeColor: AppColors.primary,
                     title: const Text(
                       'Download & Upload missing songs to selected member lockers',
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                     subtitle: const Text(
                       'Downloads playlist tracks and uploads them to the selected family members so songs are in their cloud lockers.',
-                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                      style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                     ),
                     onChanged: isCreating ? null : (val) {
                       setDialogState(() {
@@ -659,9 +660,9 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                 const SizedBox(height: 16),
                 const Row(
                   children: [
-                    Icon(Icons.verified, size: 16, color: Colors.tealAccent),
+                    Icon(Icons.verified, size: 16, color: AppColors.success),
                     SizedBox(width: 6),
-                    Text('Mode: Locker Only (Verified Uploads)', style: TextStyle(fontSize: 12, color: Colors.tealAccent)),
+                    Text('Mode: Locker Only (Verified Uploads)', style: TextStyle(fontSize: 12, color: AppColors.success)),
                   ],
                 ),
                 if (isCreating) ...[
@@ -670,13 +671,13 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                     children: [
                       SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
                       SizedBox(width: 12),
-                      Text('Creating & Reconciling replica playlist...', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      Text('Creating & Reconciling replica playlist...', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
                     ],
                   ),
                 ],
                 if (errorMsg != null) ...[
                   const SizedBox(height: 12),
-                  Text(errorMsg!, style: const TextStyle(color: Colors.redAccent, fontSize: 13)),
+                  Text(errorMsg!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
                 ],
               ],
             ),
@@ -726,8 +727,8 @@ class _PlaylistsViewState extends State<PlaylistsView> {
               icon: const Icon(Icons.check, size: 16),
               label: const Text('Create & Sync Replica'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0288D1),
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.info,
+                foregroundColor: AppColors.textPrimary,
               ),
             ),
           ],
@@ -772,34 +773,34 @@ class _PlaylistsViewState extends State<PlaylistsView> {
           }
 
           return AlertDialog(
-            backgroundColor: const Color(0xFF1E1E28),
+            backgroundColor: AppColors.surfaceElevated,
             actionsAlignment: MainAxisAlignment.spaceBetween,
             title: Row(
               children: [
-                const Icon(Icons.sync_alt, color: Colors.tealAccent),
+                const Icon(Icons.sync_alt, color: AppColors.info),
                 const SizedBox(width: 10),
                 const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Playlist Replication', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text('1:1 Locker-Only Replica Engine', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      Text('1:1 Locker-Only Replica Engine', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
                     ],
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.2),
+                    color: AppColors.successBg,
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.4)),
+                    border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.circle, size: 8, color: Colors.greenAccent),
+                      Icon(Icons.circle, size: 8, color: AppColors.success),
                       SizedBox(width: 6),
-                      Text('Watching', style: TextStyle(fontSize: 11, color: Colors.greenAccent, fontWeight: FontWeight.bold)),
+                      Text('Watching', style: TextStyle(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -810,17 +811,17 @@ class _PlaylistsViewState extends State<PlaylistsView> {
               child: isLoadingPreview
                   ? const SizedBox(
                       height: 200,
-                      child: Center(child: CircularProgressIndicator(color: Colors.tealAccent)),
+                      child: Center(child: CircularProgressIndicator(color: AppColors.info)),
                     )
                   : loadError != null
                       ? Padding(
                           padding: const EdgeInsets.all(16.0),
-                          child: Text('Error loading replica: $loadError', style: const TextStyle(color: Colors.amberAccent)),
+                          child: Text('Error loading replica: $loadError', style: const TextStyle(color: AppColors.warning)),
                         )
                       : preview == null
                           ? const Padding(
                               padding: EdgeInsets.all(16.0),
-                              child: Text('No preview data available', style: TextStyle(color: Colors.grey)),
+                              child: Text('No preview data available', style: TextStyle(color: AppColors.textMuted)),
                             )
                           : SingleChildScrollView(
                               child: Column(
@@ -831,16 +832,16 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                                   Container(
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF14141E),
+                                      color: AppColors.surface,
                                       borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: Colors.white10),
+                                      border: Border.all(color: AppColors.borderSubtle),
                                     ),
                                     child: Column(
                                       children: [
                                         _buildReplicaDetailRow('Source Playlist', preview!.sourcePlaylistName, Icons.queue_music),
-                                        const Divider(height: 20, color: Colors.white10),
+                                        const Divider(height: 20, color: AppColors.divider),
                                         _buildReplicaDetailRow('Locker Replica', preview!.destinationPlaylistName, Icons.cloud_done),
-                                        const Divider(height: 20, color: Colors.white10),
+                                        const Divider(height: 20, color: AppColors.divider),
                                         _buildReplicaDetailRow('Mode', 'Locker Only (1:1 Ordered)', Icons.lock),
                                       ],
                                     ),
@@ -850,13 +851,13 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                                   // Metrics Grid (Section 23 of plan)
                                   Row(
                                     children: [
-                                      _buildMetricCard('Source Tracks', '${preview!.sourceTracksCount}', Colors.blueAccent),
+                                      _buildMetricCard('Source Tracks', '${preview!.sourceTracksCount}', AppColors.info),
                                       const SizedBox(width: 8),
-                                      _buildMetricCard('Locker Matches', '${preview!.desiredTracksCount}', Colors.tealAccent),
+                                      _buildMetricCard('Locker Matches', '${preview!.desiredTracksCount}', AppColors.success),
                                       const SizedBox(width: 8),
-                                      _buildMetricCard('Excluded', '${preview!.excludedCount}', Colors.amberAccent),
+                                      _buildMetricCard('Excluded', '${preview!.excludedCount}', AppColors.warning),
                                       const SizedBox(width: 8),
-                                      _buildMetricCard('Destination', '${preview!.desiredTracksCount}', Colors.purpleAccent),
+                                      _buildMetricCard('Destination', '${preview!.desiredTracksCount}', AppColors.streaming),
                                     ],
                                   ),
                                   const SizedBox(height: 16),
@@ -871,21 +872,21 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                         decoration: BoxDecoration(
-                                          color: Colors.amber.withValues(alpha: 0.1),
+                                          color: AppColors.warningBg,
                                           borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                                          border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
                                         ),
                                         child: Row(
                                           children: [
-                                            const Icon(Icons.info_outline, size: 16, color: Colors.amberAccent),
+                                            const Icon(Icons.info_outline, size: 16, color: AppColors.warning),
                                             const SizedBox(width: 8),
                                             Expanded(
                                               child: Text(
                                                 '${preview!.excludedCount} tracks not uploaded to locker (excluded from replica)',
-                                                style: const TextStyle(fontSize: 12, color: Colors.amberAccent, fontWeight: FontWeight.bold),
+                                                style: const TextStyle(fontSize: 12, color: AppColors.warning, fontWeight: FontWeight.bold),
                                               ),
                                             ),
-                                            Icon(showExcludedDetails ? Icons.expand_less : Icons.expand_more, size: 18, color: Colors.amberAccent),
+                                            Icon(showExcludedDetails ? Icons.expand_less : Icons.expand_more, size: 18, color: AppColors.warning),
                                           ],
                                         ),
                                       ),
@@ -895,9 +896,9 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                                       Container(
                                         constraints: const BoxConstraints(maxHeight: 180),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF14141E),
+                                          color: AppColors.surface,
                                           borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: Colors.white10),
+                                          border: Border.all(color: AppColors.borderSubtle),
                                         ),
                                         child: ListView.builder(
                                           shrinkWrap: true,
@@ -907,9 +908,9 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                                             return ListTile(
                                               dense: true,
                                               visualDensity: VisualDensity.compact,
-                                              leading: const Icon(Icons.remove_circle_outline, size: 16, color: Colors.amberAccent),
+                                              leading: const Icon(Icons.remove_circle_outline, size: 16, color: AppColors.warning),
                                               title: Text('${item.artist} - ${item.title}', style: const TextStyle(fontSize: 13)),
-                                              subtitle: Text(item.humanReason, style: TextStyle(fontSize: 11, color: Colors.grey[400])),
+                                              subtitle: Text(item.humanReason, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                                             );
                                           },
                                         ),
@@ -923,7 +924,7 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                                       children: [
                                         const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
                                         const SizedBox(width: 12),
-                                        Text(actionStatus ?? 'Processing...', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                        Text(actionStatus ?? 'Processing...', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
                                       ],
                                     ),
                                     const SizedBox(height: 12),
@@ -940,14 +941,17 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (c) => AlertDialog(
-                            backgroundColor: const Color(0xFF1E1E28),
+                            backgroundColor: AppColors.surfaceElevated,
                             title: const Text('Delete Replica Configuration?'),
                             content: const Text('This removes the watcher configuration. The destination playlist on YouTube Music will not be deleted.'),
                             actions: [
                               TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
                               ElevatedButton(
                                 onPressed: () => Navigator.pop(c, true),
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.error,
+                                  foregroundColor: AppColors.textPrimary,
+                                ),
                                 child: const Text('Delete'),
                               ),
                             ],
@@ -960,7 +964,7 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                           if (mounted) setState(() {});
                         }
                       },
-                child: const Text('Delete Config', style: TextStyle(color: Colors.redAccent)),
+                child: const Text('Delete Config', style: TextStyle(color: AppColors.error)),
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -993,7 +997,7 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                               setModalState(() => isActionRunning = false);
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Dry run failed: $e'), backgroundColor: Colors.redAccent),
+                                  SnackBar(content: Text('Dry run failed: $e'), backgroundColor: AppColors.error),
                                 );
                               }
                             }
@@ -1019,14 +1023,14 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                               });
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Locker replica reconciled successfully!'), backgroundColor: Colors.green),
+                                  const SnackBar(content: Text('Locker replica reconciled successfully!'), backgroundColor: AppColors.success),
                                 );
                               }
                             } catch (e) {
                               setModalState(() => isActionRunning = false);
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Reconcile failed: $e'), backgroundColor: Colors.redAccent),
+                                  SnackBar(content: Text('Reconcile failed: $e'), backgroundColor: AppColors.error),
                                 );
                               }
                             }
@@ -1034,8 +1038,8 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                     icon: const Icon(Icons.sync, size: 16),
                     label: const Text('Sync Now'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00897B),
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.textPrimary,
                     ),
                   ),
                 ],
@@ -1050,9 +1054,9 @@ class _PlaylistsViewState extends State<PlaylistsView> {
   Widget _buildReplicaDetailRow(String label, String value, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.grey[400]),
+        Icon(icon, size: 16, color: AppColors.textMuted),
         const SizedBox(width: 8),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[400])),
+        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
         const SizedBox(width: 16),
         Expanded(
           child: Text(
@@ -1071,7 +1075,7 @@ class _PlaylistsViewState extends State<PlaylistsView> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFF14141E),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
@@ -1079,7 +1083,7 @@ class _PlaylistsViewState extends State<PlaylistsView> {
           children: [
             Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
             const SizedBox(height: 2),
-            Text(title, style: TextStyle(fontSize: 10, color: Colors.grey[400])),
+            Text(title, style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
           ],
         ),
       ),
@@ -1232,16 +1236,16 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                                   decoration: const BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        Color(0xFF8A2387),
-                                        Color(0xFFE94057),
-                                        Color(0xFFF27121),
+                                        AppColors.streaming,
+                                        AppColors.primary,
+                                        AppColors.warning,
                                       ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
                                   ),
                                   child: const Center(
-                                    child: Icon(Icons.thumb_up, color: Colors.white, size: 40),
+                                    child: Icon(Icons.thumb_up, color: AppColors.textPrimary, size: 40),
                                   ),
                                 )
                               : (p.thumbnail != null && p.thumbnail!.isNotEmpty
@@ -1414,7 +1418,7 @@ class _PlaylistsViewState extends State<PlaylistsView> {
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
+                            foregroundColor: AppColors.textPrimary,
                           ),
                         ),
                       if (_currentReplicaConfig != null)
