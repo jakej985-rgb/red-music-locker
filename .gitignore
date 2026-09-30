@@ -28,3 +28,7 @@ app/.flutter-plugins-dependencies
 .DS_Store
 .idea/
 .vscode/
+
+# Build artifacts
+build/
+dist/
