@@ -96,27 +96,14 @@ class _QueueViewState extends State<QueueView> {
   }
 
   Future<void> _cancelAll() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceElevated,
-        title: const Text('Cancel Active Tasks?'),
-        content: const Text('This will cancel any active playlist sync or download and clear queued upload jobs.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Back'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Cancel Tasks'),
-          ),
-        ],
-      ),
+    final confirm = await AppConfirmDialog.show(
+      context,
+      title: 'Cancel Active Tasks?',
+      message: 'This will cancel any active playlist sync or download and clear queued upload jobs.',
+      confirmLabel: 'Cancel Tasks',
+      cancelLabel: 'Back',
+      isDestructive: true,
+      icon: Icons.warning_amber_rounded,
     );
 
     if (confirm == true) {

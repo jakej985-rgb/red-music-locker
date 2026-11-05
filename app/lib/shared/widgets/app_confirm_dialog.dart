@@ -47,6 +47,7 @@ class AppConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      semanticLabel: title,
       backgroundColor: AppColors.surfaceElevated,
       shape: const RoundedRectangleBorder(borderRadius: AppRadius.dialog),
       title: Row(
@@ -73,6 +74,7 @@ class AppConfirmDialog extends StatelessWidget {
       ),
       actions: [
         TextButton(
+          autofocus: isDestructive,
           onPressed: () => Navigator.of(context).pop(false),
           child: Text(cancelLabel, style: const TextStyle(color: AppColors.textSecondary)),
         ),
