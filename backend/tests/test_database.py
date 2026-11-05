@@ -68,3 +68,29 @@ async def test_sync_job_lifecycle(test_db: Database):
     history = await test_db.get_sync_history()
     assert len(history) == 1
     assert history[0].status == UploadStatus.VERIFIED
+
+
+@pytest.mark.asyncio
+async def test_sync_jobs_music_file_id_index(test_db: Database):
+    """Verify that idx_sync_jobs_music_file_id exists and is used by query planner."""
+    async with test_db.get_connection() as conn:
+        # Check index exists in sqlite_master
+        async with conn.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_sync_jobs_music_file_id'"
+        ) as cursor:
+            row = await cursor.fetchone()
+            assert row is not None, "idx_sync_jobs_music_file_id index should exist"
+
+        # Check EXPLAIN QUERY PLAN uses index on correlated MAX subquery
+        query = """
+            EXPLAIN QUERY PLAN
+            SELECT COUNT(*) FROM sync_jobs s1
+            WHERE s1.status = 'failed'
+            AND id = (SELECT MAX(id) FROM sync_jobs s2 WHERE s2.music_file_id = s1.music_file_id)
+        """
+        async with conn.execute(query) as cursor:
+            rows = await cursor.fetchall()
+            plan_str = " ".join(dict(r)["detail"] for r in rows)
+            assert "idx_sync_jobs_music_file_id" in plan_str, (
+                f"Query plan detail should use idx_sync_jobs_music_file_id, got: {plan_str}"
+            )
