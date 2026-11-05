@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
@@ -27,14 +28,32 @@ class AppSearchBar extends StatefulWidget {
 
 class _AppSearchBarState extends State<AppSearchBar> {
   late final TextEditingController _controller;
+  late final FocusNode _focusNode;
   bool _showClear = false;
 
   @override
   void initState() {
     super.initState();
     _controller = widget.controller ?? TextEditingController();
+    _focusNode = FocusNode(onKeyEvent: _handleKeyEvent);
     _showClear = _controller.text.isNotEmpty;
     _controller.addListener(_handleTextChange);
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+      if (_controller.text.isNotEmpty) {
+        _clearSearch();
+        return KeyEventResult.handled;
+      }
+    }
+    return KeyEventResult.ignored;
+  }
+
+  void _clearSearch() {
+    _controller.clear();
+    widget.onChanged?.call('');
+    widget.onClear?.call();
   }
 
   void _handleTextChange() {
@@ -46,6 +65,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
 
   @override
   void dispose() {
+    _focusNode.dispose();
     if (widget.controller == null) {
       _controller.dispose();
     } else {
@@ -64,6 +84,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
       ),
       child: TextField(
         controller: _controller,
+        focusNode: _focusNode,
         onChanged: widget.onChanged,
         onSubmitted: widget.onSubmitted,
         style: AppTypography.body,
@@ -79,12 +100,8 @@ class _AppSearchBarState extends State<AppSearchBar> {
           suffixIcon: _showClear
               ? IconButton(
                   icon: const Icon(Icons.close_rounded, size: 16.0, color: AppColors.textSecondary),
-                  onPressed: () {
-                    _controller.clear();
-                    widget.onChanged?.call('');
-                    widget.onClear?.call();
-                  },
-                  tooltip: 'Clear search',
+                  onPressed: _clearSearch,
+                  tooltip: 'Clear search (Esc)',
                 )
               : null,
           isDense: true,
