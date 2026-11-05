@@ -231,6 +231,7 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
                                 size: 18,
                                 color: AppColors.textMuted,
                               ),
+                              tooltip: _obscurePassword ? 'Show password' : 'Hide password',
                               onPressed: () {
                                 setState(() => _obscurePassword = !_obscurePassword);
                               },

@@ -573,6 +573,7 @@ class _UploadsViewState extends State<UploadsView> {
                         children: [
                           IconButton(
                             icon: const Icon(Icons.chevron_left),
+                            tooltip: 'Previous page',
                             onPressed: _currentPage > 1
                                 ? () => _loadSummaryAndData(page: _currentPage - 1)
                                 : null,
@@ -583,6 +584,7 @@ class _UploadsViewState extends State<UploadsView> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.chevron_right),
+                            tooltip: 'Next page',
                             onPressed: _currentPage < _totalPages
                                 ? () => _loadSummaryAndData(page: _currentPage + 1)
                                 : null,

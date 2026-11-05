@@ -1448,6 +1448,7 @@ class _MetadataEditorDialogState extends State<MetadataEditorDialog> {
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   icon: const Icon(Icons.close, size: 14, color: AppColors.textMuted),
+                  tooltip: 'Dismiss message',
                   onPressed: () => setState(() => _mbSearchMessage = null),
                 ),
               ],
