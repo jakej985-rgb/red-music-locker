@@ -21,3 +21,24 @@ def test_compute_metadata_hash_consistency():
     h1 = compute_metadata_hash("Tool", "Lateralus", "Schism", 406.0)
     h2 = compute_metadata_hash("TOOL", "Lateralus [Deluxe]", "Schism (Radio Edit)", 406.2)
     assert h1 == h2
+
+def test_normalize_text_caching_and_edge_cases():
+    # Test edge cases: None, empty string, whitespace only
+    assert normalize_text(None) == ""
+    assert normalize_text("") == ""
+    assert normalize_text("   ") == ""
+
+    # Test cache hits work as expected
+    normalize_text.cache_clear()
+    info_before = normalize_text.cache_info()
+    assert info_before.hits == 0
+
+    res1 = normalize_text("Radiohead - Creep (Remastered)")
+    info_after_miss = normalize_text.cache_info()
+    assert info_after_miss.hits == 0
+    assert info_after_miss.misses >= 1
+
+    res2 = normalize_text("Radiohead - Creep (Remastered)")
+    info_after_hit = normalize_text.cache_info()
+    assert info_after_hit.hits >= 1
+    assert res1 == res2 == "radiohead creep"
