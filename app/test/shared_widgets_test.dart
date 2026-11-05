@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app/shared/widgets/shared_widgets.dart';
 
@@ -76,6 +77,37 @@ void main() {
 
       await tester.enterText(find.byType(TextField), 'Metallica');
       expect(query, 'Metallica');
+    });
+
+    testWidgets('AppSearchBar shows clear button with tooltip and clears via Escape key', (tester) async {
+      String query = '';
+      bool cleared = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AppSearchBar(
+              onChanged: (val) => query = val,
+              onClear: () => cleared = true,
+            ),
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextField), 'Nirvana');
+      await tester.pump();
+      expect(query, 'Nirvana');
+
+      // Verify clear button with shortcut tooltip is displayed
+      final clearButton = find.byTooltip('Clear search (Esc)');
+      expect(clearButton, findsOneWidget);
+
+      // Press Escape key while focused
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+
+      expect(query, '');
+      expect(cleared, isTrue);
+      expect(find.byTooltip('Clear search (Esc)'), findsNothing);
     });
 
     testWidgets('AppEmptyState renders title and calls action button', (tester) async {
