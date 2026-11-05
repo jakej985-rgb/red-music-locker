@@ -101,6 +101,22 @@ app.add_middleware(
 )
 
 @app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    """
+    Security Enhancement: Inject standard security headers on all responses.
+    - X-Content-Type-Options: Prevents MIME-sniffing attacks.
+    - X-Frame-Options: Protects against UI redressing/clickjacking by disallowing framing.
+    - Referrer-Policy: Prevents leaking full URLs or sensitive query parameters to external sites.
+    - Permissions-Policy: Restricts browser features (camera, microphone, geolocation) not needed by the app.
+    """
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    return response
+
+@app.middleware("http")
 async def authenticate_api_requests(request: Request, call_next):
     path = request.url.path
     # Allow public health endpoint, application login, and static frontend files
