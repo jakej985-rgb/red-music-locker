@@ -195,6 +195,35 @@ async def test_auth_callback_post_and_get():
 
 
 @pytest.mark.asyncio
+async def test_security_auth_callback_xss_sanitization():
+    """Ensure user_name returned from external auth is properly HTML-escaped to prevent XSS."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        start_resp = await ac.post("/api/auth/start")
+        session_id = start_resp.json()["session_id"]
+
+        xss_payload = '<script>alert("xss")</script><img src=x onerror=alert(1)>'
+        mock_result = {
+            "connected": True,
+            "message": "Connected successfully",
+            "user_name": xss_payload
+        }
+        with patch("ytm_service.auth_service.ytm_client.setup_auth", new=AsyncMock(return_value=mock_result)):
+            post_resp = await ac.post(
+                "/api/auth/callback",
+                json={"session_id": session_id, "raw_headers": "Cookie: test=1"}
+            )
+            assert post_resp.status_code == 200
+
+        get_resp = await ac.get(f"/api/auth/callback?session_id={session_id}")
+        assert get_resp.status_code == 200
+        assert "<script>" not in get_resp.text
+        assert "<img src=x onerror=alert(1)>" not in get_resp.text
+        assert "&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;" in get_resp.text
+        assert "&lt;img src=x onerror=alert(1)&gt;" in get_resp.text
+
+
+@pytest.mark.asyncio
 async def test_security_credentials_never_leaked_in_errors():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:

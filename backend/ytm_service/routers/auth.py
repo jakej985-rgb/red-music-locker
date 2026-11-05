@@ -1,6 +1,7 @@
 """Router module for Authentication endpoints."""
 import logging
 
+import html
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -226,7 +227,9 @@ p { color: #aaa; line-height: 1.5; }
             status_code=400
         )
 
-    user_disp = session.user_name or "Connected Account"
+    # Security: user_name originates from external YouTube Music responses or session payloads.
+    # HTML-escape the account display name to prevent Cross-Site Scripting (XSS).
+    user_disp = html.escape(session.user_name or "Connected Account", quote=True)
     return HTMLResponse(
         content=f"""<!DOCTYPE html>
 <html>
