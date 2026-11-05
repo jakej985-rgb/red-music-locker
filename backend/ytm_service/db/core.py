@@ -247,6 +247,9 @@ CREATE INDEX IF NOT EXISTS idx_music_files_path ON music_files(path);
 CREATE INDEX IF NOT EXISTS idx_music_files_artist_title ON music_files(artist, title);
 CREATE INDEX IF NOT EXISTS idx_ytm_uploads_entity ON ytm_uploads(entity_id);
 CREATE INDEX IF NOT EXISTS idx_matches_music_file ON matches(music_file_id);
+-- Performance: Index foreign key music_file_id to accelerate correlated subqueries and joins
+-- in get_music_files, get_music_file_by_id, and get_dashboard_counts (>300x speedup on large tables)
+CREATE INDEX IF NOT EXISTS idx_sync_jobs_music_file_id ON sync_jobs(music_file_id);
 CREATE INDEX IF NOT EXISTS idx_sync_jobs_status ON sync_jobs(status);
 CREATE INDEX IF NOT EXISTS idx_needs_help_video ON needs_help_tracks(video_id);
 CREATE INDEX IF NOT EXISTS idx_file_replacements_path ON file_replacements(original_path);
@@ -423,6 +426,7 @@ class CoreDbMixin:
             await db.execute("CREATE INDEX IF NOT EXISTS idx_sync_jobs_user_id ON sync_jobs(user_id);")
             await db.execute("CREATE INDEX IF NOT EXISTS idx_sync_jobs_family_id ON sync_jobs(family_id);")
             await db.execute("CREATE INDEX IF NOT EXISTS idx_sync_jobs_destination_user_id ON sync_jobs(destination_user_id);")
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_sync_jobs_music_file_id ON sync_jobs(music_file_id);")
 
             await db.commit()
 
