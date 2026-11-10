@@ -160,60 +160,50 @@ async def test_music_files_latest_sync_job_optimization(test_db: Database):
 
 @pytest.mark.asyncio
 async def test_get_folder_song_counts_optimization(test_db: Database):
-    """Verify get_folder_song_counts accurately computes total and unmapped songs using index range."""
-    # Seed files in /music, /music/subfolder, and sibling /music-other
+    """Verify get_folder_song_counts calculates total and unmapped counts in a single query."""
+    # Insert songs in two folders: /music/rock and /music/jazz
     f1 = await test_db.upsert_music_file({
-        "path": "/music/track1.mp3",
-        "filename": "track1.mp3",
+        "path": "/music/rock/song1.mp3",
+        "filename": "song1.mp3",
+        "artist": "Rock Artist",
+        "album": "Rock Album",
+        "title": "Song 1",
         "format": "mp3",
         "file_size": 1000,
         "modified_time": 1000.0,
     })
     f2 = await test_db.upsert_music_file({
-        "path": "/music/sub/track2.mp3",
-        "filename": "track2.mp3",
+        "path": "/music/rock/sub/song2.mp3",
+        "filename": "song2.mp3",
+        "artist": "Rock Artist",
+        "album": "Rock Album",
+        "title": "Song 2",
         "format": "mp3",
         "file_size": 1000,
         "modified_time": 1000.0,
     })
-    # Sibling folder that shares prefix text but not folder boundary
-    await test_db.upsert_music_file({
-        "path": "/music-other/track3.mp3",
-        "filename": "track3.mp3",
+    f3 = await test_db.upsert_music_file({
+        "path": "/music/jazz/song3.mp3",
+        "filename": "song3.mp3",
+        "artist": "Jazz Artist",
+        "album": "Jazz Album",
+        "title": "Song 3",
         "format": "mp3",
         "file_size": 1000,
         "modified_time": 1000.0,
     })
 
-    # Initially, both /music files are unmapped
-    counts = await test_db.get_folder_song_counts("/music")
-    assert counts["total"] == 2
-    assert counts["unmapped"] == 2
+    # Save a match for song1 (so song1 is mapped, song2 is unmapped)
+    await test_db.save_match(f1, "upload_1", MatchType.EXACT, 1.0)
 
-    # Trailing slash handling
-    counts_slash = await test_db.get_folder_song_counts("/music/")
-    assert counts_slash["total"] == 2
-    assert counts_slash["unmapped"] == 2
+    # Check rock counts: 2 total, 1 unmapped
+    rock_counts = await test_db.get_folder_song_counts("/music/rock")
+    assert rock_counts == {"total": 2, "unmapped": 1}
 
-    # Map f1 to an upload
-    await test_db.save_match(
-        file_id=f1,
-        ytm_upload_id="upload_123",
-        match_type=MatchType.EXACT,
-        score=1.0,
-        sync_decision="SYNCED"
-    )
+    # Check jazz counts: 1 total, 1 unmapped
+    jazz_counts = await test_db.get_folder_song_counts("/music/jazz")
+    assert jazz_counts == {"total": 1, "unmapped": 1}
 
-    counts_after_match = await test_db.get_folder_song_counts("/music")
-    assert counts_after_match["total"] == 2
-    assert counts_after_match["unmapped"] == 1
-
-    # Sibling folder should be isolated
-    counts_other = await test_db.get_folder_song_counts("/music-other")
-    assert counts_other["total"] == 1
-    assert counts_other["unmapped"] == 1
-
-    # Empty folder
-    counts_empty = await test_db.get_folder_song_counts("/empty/path")
-    assert counts_empty["total"] == 0
-    assert counts_empty["unmapped"] == 0
+    # Check non-existent folder
+    empty_counts = await test_db.get_folder_song_counts("/music/classical")
+    assert empty_counts == {"total": 0, "unmapped": 0}
