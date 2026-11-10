@@ -207,3 +207,27 @@ async def test_get_folder_song_counts_optimization(test_db: Database):
     # Check non-existent folder
     empty_counts = await test_db.get_folder_song_counts("/music/classical")
     assert empty_counts == {"total": 0, "unmapped": 0}
+
+    # Check that EXPLAIN QUERY PLAN uses idx_music_files_path index instead of scanning table
+    exact_match = "/music/rock"
+    folder_prefix = exact_match + "/"
+    folder_prefix_upper = exact_match + "0"
+    query = """
+        EXPLAIN QUERY PLAN
+        SELECT
+            COUNT(*) as total,
+            COUNT(CASE WHEN m.id IS NULL THEN 1 END) as unmapped
+        FROM music_files mf
+        LEFT JOIN matches m ON mf.id = m.music_file_id
+        WHERE ((mf.path >= ? AND mf.path < ?) OR mf.path = ?)
+    """
+    async with test_db.get_connection() as conn:
+        async with conn.execute(query, (folder_prefix, folder_prefix_upper, exact_match)) as cursor:
+            rows = await cursor.fetchall()
+            plan_str = " ".join(dict(r)["detail"] for r in rows)
+            assert "idx_music_files_path" in plan_str, (
+                f"Query plan detail should use idx_music_files_path, got: {plan_str}"
+            )
+            assert "SCAN mf" not in plan_str, (
+                f"Query plan should not perform full SCAN on mf, got: {plan_str}"
+            )
