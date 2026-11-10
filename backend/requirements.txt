@@ -4,7 +4,7 @@ ytmusicapi==1.12.3
 mutagen==1.48.1
 pydantic==2.14.3
 aiosqlite==0.22.1
-pytest==9.1.1
+pytest==9.2.0
 pytest-asyncio==1.4.1
 httpx==0.28.1
 yt-dlp==2026.10.21
