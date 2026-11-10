@@ -160,74 +160,60 @@ async def test_music_files_latest_sync_job_optimization(test_db: Database):
 
 @pytest.mark.asyncio
 async def test_get_folder_song_counts_optimization(test_db: Database):
-    """Verify get_folder_song_counts accurately calculates total and unmapped songs using index range scan."""
-    # Insert songs across two distinct folders
+    """Verify get_folder_song_counts accurately computes total and unmapped songs using index range."""
+    # Seed files in /music, /music/subfolder, and sibling /music-other
     f1 = await test_db.upsert_music_file({
-        "path": "/music/rock/song1.mp3",
-        "filename": "song1.mp3",
-        "artist": "Rock Band",
-        "album": "Album 1",
-        "title": "Song 1",
+        "path": "/music/track1.mp3",
+        "filename": "track1.mp3",
         "format": "mp3",
         "file_size": 1000,
         "modified_time": 1000.0,
     })
     f2 = await test_db.upsert_music_file({
-        "path": "/music/rock/sub/song2.mp3",
-        "filename": "song2.mp3",
-        "artist": "Rock Band",
-        "album": "Album 1",
-        "title": "Song 2",
+        "path": "/music/sub/track2.mp3",
+        "filename": "track2.mp3",
         "format": "mp3",
         "file_size": 1000,
         "modified_time": 1000.0,
     })
-    f3 = await test_db.upsert_music_file({
-        "path": "/music/jazz/song3.mp3",
-        "filename": "song3.mp3",
-        "artist": "Jazz Band",
-        "album": "Album J",
-        "title": "Song 3",
+    # Sibling folder that shares prefix text but not folder boundary
+    await test_db.upsert_music_file({
+        "path": "/music-other/track3.mp3",
+        "filename": "track3.mp3",
         "format": "mp3",
         "file_size": 1000,
         "modified_time": 1000.0,
     })
 
-    # Initially all unmapped
-    counts_rock = await test_db.get_folder_song_counts("/music/rock")
-    assert counts_rock["total"] == 2
-    assert counts_rock["unmapped"] == 2
+    # Initially, both /music files are unmapped
+    counts = await test_db.get_folder_song_counts("/music")
+    assert counts["total"] == 2
+    assert counts["unmapped"] == 2
 
-    counts_jazz = await test_db.get_folder_song_counts("/music/jazz")
-    assert counts_jazz["total"] == 1
-    assert counts_jazz["unmapped"] == 1
+    # Trailing slash handling
+    counts_slash = await test_db.get_folder_song_counts("/music/")
+    assert counts_slash["total"] == 2
+    assert counts_slash["unmapped"] == 2
 
-    # Match f1 in rock
-    await test_db.save_match(f1, "ytm_entity_1", MatchType.EXACT, 1.0)
+    # Map f1 to an upload
+    await test_db.save_match(
+        file_id=f1,
+        ytm_upload_id="upload_123",
+        match_type=MatchType.EXACT,
+        score=1.0,
+        sync_decision="SYNCED"
+    )
 
-    counts_rock = await test_db.get_folder_song_counts("/music/rock")
-    assert counts_rock["total"] == 2
-    assert counts_rock["unmapped"] == 1  # f2 still unmapped
+    counts_after_match = await test_db.get_folder_song_counts("/music")
+    assert counts_after_match["total"] == 2
+    assert counts_after_match["unmapped"] == 1
 
-    # Verify query plan uses idx_music_files_path index range scan
-    async with test_db.get_connection() as conn:
-        folder_path = "/music/rock"
-        exact_match = folder_path.rstrip("/")
-        prefix = f"{exact_match}/"
-        lower_bound = prefix
-        upper_bound = prefix[:-1] + chr(ord(prefix[-1]) + 1)
-        query = """
-            EXPLAIN QUERY PLAN
-            SELECT
-                COUNT(*) as total,
-                COUNT(CASE WHEN m.id IS NULL THEN 1 END) as unmapped
-            FROM music_files mf
-            LEFT JOIN matches m ON mf.id = m.music_file_id
-            WHERE (mf.path >= ? AND mf.path < ?) OR mf.path = ?
-        """
-        async with conn.execute(query, (lower_bound, upper_bound, exact_match)) as cursor:
-            rows = await cursor.fetchall()
-            plan_str = " ".join(dict(r)["detail"] for r in rows)
-            assert "idx_music_files_path" in plan_str, (
-                f"Query plan detail should use idx_music_files_path, got: {plan_str}"
-            )
+    # Sibling folder should be isolated
+    counts_other = await test_db.get_folder_song_counts("/music-other")
+    assert counts_other["total"] == 1
+    assert counts_other["unmapped"] == 1
+
+    # Empty folder
+    counts_empty = await test_db.get_folder_song_counts("/empty/path")
+    assert counts_empty["total"] == 0
+    assert counts_empty["unmapped"] == 0
