@@ -31,7 +31,7 @@ jobs:
 
       - name: Dispatch Release Event to M3tal-Hub
         if: steps.check-token.outputs.configured == 'true'
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@v4
         with:
           token: ${{ secrets.M3TAL_HUB_TOKEN }}
           repository: jakej985-rgb/M3tal-Hub

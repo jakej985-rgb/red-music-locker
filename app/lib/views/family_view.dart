@@ -252,6 +252,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                       ),
                       IconButton(
                         icon: const Icon(Icons.copy, size: 18, color: AppColors.textSecondary),
+                        tooltip: 'Copy invitation token',
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: inv.invitationToken));
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Token copied to clipboard!')));
@@ -378,6 +379,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                     ),
                     IconButton(
                       icon: const Icon(Icons.close, size: 16, color: AppColors.textMuted),
+                      tooltip: 'Dismiss error',
                       onPressed: () => setState(() => _errorMessage = null),
                     ),
                   ],
@@ -709,6 +711,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                       ),
                       IconButton(
                         icon: const Icon(Icons.copy, size: 16, color: AppColors.textMuted),
+                        tooltip: 'Copy token',
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: inv.invitationToken));
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Token copied!')));
@@ -717,6 +720,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                       if (isOwnerOrAdmin)
                         IconButton(
                           icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.error),
+                          tooltip: 'Revoke invitation',
                           onPressed: () async {
                             if (_selectedFamily != null) {
                               await apiService.revokeFamilyInvitation(_selectedFamily!.id, inv.id);
@@ -1744,6 +1748,7 @@ class _FamilyViewState extends State<FamilyView> with SingleTickerProviderStateM
                               Expanded(child: Text(playlistError!, style: const TextStyle(fontSize: 12, color: AppColors.warning))),
                               IconButton(
                                 icon: const Icon(Icons.refresh, size: 16),
+                                tooltip: 'Retry loading playlists',
                                 onPressed: () => loadPlaylists(selectedSourceUserId, setDialogState),
                               ),
                             ],

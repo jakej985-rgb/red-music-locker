@@ -68,3 +68,166 @@ async def test_sync_job_lifecycle(test_db: Database):
     history = await test_db.get_sync_history()
     assert len(history) == 1
     assert history[0].status == UploadStatus.VERIFIED
+
+
+@pytest.mark.asyncio
+async def test_sync_jobs_music_file_id_index(test_db: Database):
+    """Verify that idx_sync_jobs_music_file_id exists and is used by query planner."""
+    async with test_db.get_connection() as conn:
+        # Check index exists in sqlite_master
+        async with conn.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_sync_jobs_music_file_id'"
+        ) as cursor:
+            row = await cursor.fetchone()
+            assert row is not None, "idx_sync_jobs_music_file_id index should exist"
+
+        # Check EXPLAIN QUERY PLAN uses index on correlated MAX subquery
+        query = """
+            EXPLAIN QUERY PLAN
+            SELECT COUNT(*) FROM sync_jobs s1
+            WHERE s1.status = 'failed'
+            AND id = (SELECT MAX(id) FROM sync_jobs s2 WHERE s2.music_file_id = s1.music_file_id)
+        """
+        async with conn.execute(query) as cursor:
+            rows = await cursor.fetchall()
+            plan_str = " ".join(dict(r)["detail"] for r in rows)
+            assert "idx_sync_jobs_music_file_id" in plan_str, (
+                f"Query plan detail should use idx_sync_jobs_music_file_id, got: {plan_str}"
+            )
+
+
+@pytest.mark.asyncio
+async def test_music_files_latest_sync_job_optimization(test_db: Database):
+    """Verify get_music_files and get_dashboard_counts accurately resolve the latest sync job."""
+    # Insert two tracks
+    f1 = await test_db.upsert_music_file({
+        "path": "/music/song1.mp3",
+        "filename": "song1.mp3",
+        "artist": "Artist A",
+        "album": "Album 1",
+        "title": "Song 1",
+        "format": "mp3",
+        "file_size": 1000,
+        "modified_time": 1000.0,
+    })
+    f2 = await test_db.upsert_music_file({
+        "path": "/music/song2.mp3",
+        "filename": "song2.mp3",
+        "artist": "Artist B",
+        "album": "Album 2",
+        "title": "Song 2",
+        "format": "mp3",
+        "file_size": 1000,
+        "modified_time": 1000.0,
+    })
+
+    # For f1, create 3 sync jobs in sequence: failed -> queued -> verified
+    j1 = await test_db.create_sync_job(f1)
+    await test_db.update_sync_job(j1, UploadStatus.FAILED)
+    j2 = await test_db.create_sync_job(f1)
+    await test_db.update_sync_job(j2, UploadStatus.QUEUED)
+    j3 = await test_db.create_sync_job(f1)
+    await test_db.update_sync_job(j3, UploadStatus.VERIFIED)
+
+    # For f2, create 2 sync jobs: queued -> failed
+    j4 = await test_db.create_sync_job(f2)
+    await test_db.update_sync_job(j4, UploadStatus.QUEUED)
+    j5 = await test_db.create_sync_job(f2)
+    await test_db.update_sync_job(j5, UploadStatus.FAILED)
+
+    files = await test_db.get_music_files()
+    assert len(files) == 2
+    f1_res = next(f for f in files if f.id == f1)
+    f2_res = next(f for f in files if f.id == f2)
+    assert f1_res.upload_status == UploadStatus.VERIFIED
+    assert f2_res.upload_status == UploadStatus.FAILED
+
+    # Test filtering by status
+    uploaded_files = await test_db.get_music_files(filter_status="uploaded")
+    assert len(uploaded_files) == 1
+    assert uploaded_files[0].id == f1
+
+    failed_files = await test_db.get_music_files(filter_status="failed")
+    assert len(failed_files) == 1
+    assert failed_files[0].id == f2
+
+    # Check dashboard counts
+    counts = await test_db.get_dashboard_counts()
+    assert counts["local_songs_count"] == 2
+    assert counts["failed_count"] == 1
+    assert counts["missing_count"] == 1  # f2 failed, so still missing
+
+
+@pytest.mark.asyncio
+async def test_get_folder_song_counts_optimization(test_db: Database):
+    """Verify get_folder_song_counts accurately calculates total and unmapped songs using index range scan."""
+    # Insert songs across two distinct folders
+    f1 = await test_db.upsert_music_file({
+        "path": "/music/rock/song1.mp3",
+        "filename": "song1.mp3",
+        "artist": "Rock Band",
+        "album": "Album 1",
+        "title": "Song 1",
+        "format": "mp3",
+        "file_size": 1000,
+        "modified_time": 1000.0,
+    })
+    f2 = await test_db.upsert_music_file({
+        "path": "/music/rock/sub/song2.mp3",
+        "filename": "song2.mp3",
+        "artist": "Rock Band",
+        "album": "Album 1",
+        "title": "Song 2",
+        "format": "mp3",
+        "file_size": 1000,
+        "modified_time": 1000.0,
+    })
+    f3 = await test_db.upsert_music_file({
+        "path": "/music/jazz/song3.mp3",
+        "filename": "song3.mp3",
+        "artist": "Jazz Band",
+        "album": "Album J",
+        "title": "Song 3",
+        "format": "mp3",
+        "file_size": 1000,
+        "modified_time": 1000.0,
+    })
+
+    # Initially all unmapped
+    counts_rock = await test_db.get_folder_song_counts("/music/rock")
+    assert counts_rock["total"] == 2
+    assert counts_rock["unmapped"] == 2
+
+    counts_jazz = await test_db.get_folder_song_counts("/music/jazz")
+    assert counts_jazz["total"] == 1
+    assert counts_jazz["unmapped"] == 1
+
+    # Match f1 in rock
+    await test_db.save_match(f1, "ytm_entity_1", MatchType.EXACT, 1.0)
+
+    counts_rock = await test_db.get_folder_song_counts("/music/rock")
+    assert counts_rock["total"] == 2
+    assert counts_rock["unmapped"] == 1  # f2 still unmapped
+
+    # Verify query plan uses idx_music_files_path index range scan
+    async with test_db.get_connection() as conn:
+        folder_path = "/music/rock"
+        exact_match = folder_path.rstrip("/")
+        prefix = f"{exact_match}/"
+        lower_bound = prefix
+        upper_bound = prefix[:-1] + chr(ord(prefix[-1]) + 1)
+        query = """
+            EXPLAIN QUERY PLAN
+            SELECT
+                COUNT(*) as total,
+                COUNT(CASE WHEN m.id IS NULL THEN 1 END) as unmapped
+            FROM music_files mf
+            LEFT JOIN matches m ON mf.id = m.music_file_id
+            WHERE (mf.path >= ? AND mf.path < ?) OR mf.path = ?
+        """
+        async with conn.execute(query, (lower_bound, upper_bound, exact_match)) as cursor:
+            rows = await cursor.fetchall()
+            plan_str = " ".join(dict(r)["detail"] for r in rows)
+            assert "idx_music_files_path" in plan_str, (
+                f"Query plan detail should use idx_music_files_path, got: {plan_str}"
+            )

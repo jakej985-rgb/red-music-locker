@@ -292,6 +292,25 @@ class MusicScanner:
         scanned_count = 0
         
         try:
+            tasks = []
+            # Use a semaphore to limit concurrency and avoid exhausting resources
+            sem = asyncio.Semaphore(50)
+
+            async def process_file(file_path: Path):
+                nonlocal scanned_count
+                async with sem:
+                    try:
+                        # Run extraction in threadpool
+                        meta = await asyncio.to_thread(extract_metadata, file_path)
+                        await db.upsert_music_file(meta)
+                        scanned_count += 1
+                        if progress_callback:
+                            progress_callback(scanned_count, str(file_path))
+                    except Exception as e:
+                        err_msg = f"Failed to process {file_path}: {e}"
+                        logger.error(err_msg)
+                        self.errors.append(err_msg)
+
             for folder_str in folders:
                 folder = Path(folder_str)
                 if not folder.exists() or not folder.is_dir():
@@ -303,17 +322,10 @@ class MusicScanner:
                         ext = Path(filename).suffix.lower()
                         if ext in settings.supported_extensions:
                             file_path = Path(root) / filename
-                            try:
-                                # Run extraction in threadpool
-                                meta = await asyncio.to_thread(extract_metadata, file_path)
-                                await db.upsert_music_file(meta)
-                                scanned_count += 1
-                                if progress_callback:
-                                    progress_callback(scanned_count, str(file_path))
-                            except Exception as e:
-                                err_msg = f"Failed to process {file_path}: {e}"
-                                logger.error(err_msg)
-                                self.errors.append(err_msg)
+                            tasks.append(process_file(file_path))
+
+            if tasks:
+                await asyncio.gather(*tasks)
 
             self.last_scanned_count = scanned_count
             return scanned_count

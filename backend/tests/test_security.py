@@ -169,6 +169,23 @@ async def test_api_docs_disabled_by_default():
 
 
 # ============================================================================
+# 3b. SECURITY HEADERS ENFORCEMENT
+# ============================================================================
+
+@pytest.mark.asyncio
+async def test_security_headers_present_on_responses():
+    """All responses must include standard defensive security headers."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        res = await ac.get("/health", headers={"X-No-Auth": "true"})
+        assert res.status_code == 200
+        assert res.headers.get("x-content-type-options") == "nosniff"
+        assert res.headers.get("x-frame-options") == "DENY"
+        assert res.headers.get("referrer-policy") == "strict-origin-when-cross-origin"
+        assert "geolocation=()" in res.headers.get("permissions-policy", "")
+
+
+# ============================================================================
 # 4. CORS RESTRICTIONS
 # ============================================================================
 

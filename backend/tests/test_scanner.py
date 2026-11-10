@@ -5,8 +5,9 @@ from ytm_service.database import Database
 
 @pytest.mark.asyncio
 async def test_scanner_finds_supported_and_ignores_unsupported(tmp_path: Path):
-    db_instance = Database(tmp_path / "test_scanner.db")
-    await db_instance.init_db()
+    import ytm_service.database
+    ytm_service.database.db.db_path = tmp_path / "test_scanner.db"
+    await ytm_service.database.db.init_db()
 
     # Create supported files
     (tmp_path / "song1.mp3").write_bytes(b"dummy mp3")
