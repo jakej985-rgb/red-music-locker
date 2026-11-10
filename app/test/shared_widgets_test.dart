@@ -210,6 +210,14 @@ void main() {
       expect(find.text('Delete'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
 
+      // Verify accessibility semanticLabel on AlertDialog
+      final alertDialog = tester.widget<AlertDialog>(find.byType(AlertDialog));
+      expect(alertDialog.semanticLabel, 'Delete Playlist?');
+
+      // Verify cancel button has autofocus when isDestructive is true
+      final cancelButton = tester.widget<TextButton>(find.widgetWithText(TextButton, 'Cancel'));
+      expect(cancelButton.autofocus, isTrue);
+
       await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle();
 
