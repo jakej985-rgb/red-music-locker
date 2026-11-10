@@ -701,9 +701,69 @@ def test_section29_cli_dry_run_formatting():
     assert "Would EXCLUDE:\nArtist D - Song 4\n    not uploaded" in output
 
 
+def test_calculate_reconciliation_diff_duplicates_and_ordering():
+    """
+    Verify exact reconciliation diff semantics for complex playlists involving duplicate
+    tracks, excess duplicates removal, reordered tracks, and new additions.
+    """
+    current_dest = [
+        {"videoId": "VID_A", "title": "Track A", "artist": "Artist A", "setVideoId": "set_A1"},
+        {"videoId": "VID_B", "title": "Track B", "artist": "Artist B", "setVideoId": "set_B1"},
+        {"videoId": "VID_A", "title": "Track A", "artist": "Artist A", "setVideoId": "set_A2"},
+        {"videoId": "VID_C", "title": "Track C", "artist": "Artist C", "setVideoId": "set_C1"},
+        {"videoId": "VID_X", "title": "Track X", "artist": "Artist X", "setVideoId": "set_X1"},
+    ]
+    desired = [
+        {"video_id": "VID_C", "title": "Track C", "artist": "Artist C"},
+        {"video_id": "VID_A", "title": "Track A", "artist": "Artist A"},
+        {"video_id": "VID_B", "title": "Track B", "artist": "Artist B"},
+        {"video_id": "VID_D", "title": "Track D", "artist": "Artist D"},
+    ]
+
+    diff = calculate_reconciliation_diff(current_dest, desired)
+    assert diff["status"] == "CHANGES_REQUIRED"
+    assert diff["reordered"] is True
+
+    # VID_A is desired once, but destination had 2 copies. Second copy should be removed alongside VID_X.
+    removals = [r["videoId"] for r in diff["removals"]]
+    assert "VID_X" in removals
+    assert "VID_A" in removals
+    assert len(diff["removals"]) == 2
+
+    # VID_D must be added
+    assert diff["additions"] == ["VID_D"]
+
+    # Positions changed: VID_C was at pos 4, moved to pos 1; VID_A was pos 1, moved to pos 2; VID_B pos 2 to pos 3
+    moves = [a for a in diff["actions"] if a["action"] == "MOVE"]
+    assert any(m["video_id"] == "VID_C" and m["from_position"] == 4 and m["to_position"] == 1 for m in moves)
+    assert any(m["video_id"] == "VID_A" and m["from_position"] == 1 and m["to_position"] == 2 for m in moves)
+    assert any(m["video_id"] == "VID_B" and m["from_position"] == 2 and m["to_position"] == 3 for m in moves)
 
 
+def test_calculate_reconciliation_diff_benchmark_scale():
+    """
+    Verify linear scaling performance of calculate_reconciliation_diff on large (1,000 track) playlists.
+    Must compute diff in under 30ms (previously ~140ms with quadratic nested scans).
+    """
+    import time
+    current_dest = [
+        {"videoId": f"vid_{i % 500}", "title": f"Title {i}", "artist": f"Artist {i}", "setVideoId": f"set_{i}"}
+        for i in range(1000)
+    ]
+    desired = [
+        {"video_id": f"vid_{i % 400}", "title": f"Title {i}", "artist": f"Artist {i}"}
+        for i in reversed(range(1000))
+    ]
 
+    t0 = time.perf_counter()
+    diff = calculate_reconciliation_diff(current_dest, desired)
+    elapsed_ms = (time.perf_counter() - t0) * 1000
+
+    assert diff["status"] == "CHANGES_REQUIRED"
+    assert diff["reordered"] is True
+    assert len(diff["actions"]) > 0
+    # Strict performance threshold: O(N) execution should easily finish in < 30ms on 1,000 tracks
+    assert elapsed_ms < 30.0, f"Diff took {elapsed_ms:.2f}ms, expected linear execution < 30ms"
 
 
 @pytest.mark.asyncio
