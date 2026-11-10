@@ -36,6 +36,7 @@ class _SettingsViewState extends State<SettingsView> {
   bool _isSavingAuth = false;
   String? _authMessage;
   String? _currentAuthUrl;
+  bool _obscureApiKey = true;
 
   List<User> _users = [];
   bool _isLoadingUsers = false;
@@ -517,7 +518,7 @@ class _SettingsViewState extends State<SettingsView> {
                       Expanded(
                         child: TextField(
                           controller: _apiKeyController,
-                          obscureText: true,
+                          obscureText: _obscureApiKey,
                           style: const TextStyle(fontFamily: 'monospace', fontSize: 13, color: AppColors.textPrimary),
                           decoration: InputDecoration(
                             hintText: 'Enter API Key',
@@ -526,6 +527,17 @@ class _SettingsViewState extends State<SettingsView> {
                             border: const OutlineInputBorder(borderRadius: AppRadius.button),
                             filled: true,
                             fillColor: AppColors.surfaceElevated,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureApiKey ? Icons.visibility : Icons.visibility_off,
+                                size: 18,
+                                color: AppColors.textMuted,
+                              ),
+                              tooltip: _obscureApiKey ? 'Show API key' : 'Hide API key',
+                              onPressed: () {
+                                setState(() => _obscureApiKey = !_obscureApiKey);
+                              },
+                            ),
                           ),
                         ),
                       ),

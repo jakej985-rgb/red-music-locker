@@ -99,6 +99,52 @@ void main() {
       // 4. Advanced / Developer section should exist
       expect(find.text('Advanced / Developer Authentication'), findsOneWidget);
     });
+
+    testWidgets('API Key field supports visibility toggle with accessible tooltip',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SettingsView(),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Find the API Key TextField
+      final apiKeyFieldFinder = find.widgetWithText(TextField, 'API Key');
+      expect(apiKeyFieldFinder, findsOneWidget);
+
+      TextField apiKeyField = tester.widget<TextField>(apiKeyFieldFinder);
+      expect(apiKeyField.obscureText, isTrue);
+
+      // Verify toggle button initial state (Show API key)
+      final toggleFinder = find.byTooltip('Show API key');
+      expect(toggleFinder, findsOneWidget);
+      expect(find.descendant(of: toggleFinder, matching: find.byIcon(Icons.visibility)), findsOneWidget);
+
+      // Tap toggle button to reveal API key
+      await tester.tap(toggleFinder);
+      await tester.pump();
+
+      apiKeyField = tester.widget<TextField>(apiKeyFieldFinder);
+      expect(apiKeyField.obscureText, isFalse);
+
+      // Verify toggle button updated state (Hide API key)
+      final hideFinder = find.byTooltip('Hide API key');
+      expect(hideFinder, findsOneWidget);
+      expect(find.descendant(of: hideFinder, matching: find.byIcon(Icons.visibility_off)), findsOneWidget);
+
+      // Tap toggle button again to obscure API key
+      await tester.tap(hideFinder);
+      await tester.pump();
+
+      apiKeyField = tester.widget<TextField>(apiKeyFieldFinder);
+      expect(apiKeyField.obscureText, isTrue);
+      expect(find.byTooltip('Show API key'), findsOneWidget);
+    });
   });
 }
 
