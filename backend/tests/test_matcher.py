@@ -126,7 +126,7 @@ def test_evaluate_match_edge_cases_and_length_pruning():
 
 def test_evaluate_match_negative_pairs_skip_title_similarity():
     from unittest.mock import patch
-    import backend.ytm_service.matcher as matcher_mod
+    import ytm_service.matcher as matcher_mod
 
     pairs = [
         (("The Beatles", "Abbey Road", "Come Together", 259.0), ("Queen", "A Night at the Opera", "Bohemian Rhapsody", 354.0)),
