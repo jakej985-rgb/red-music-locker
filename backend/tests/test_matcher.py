@@ -124,19 +124,22 @@ def test_evaluate_match_edge_cases_and_length_pruning():
     assert m_type_empty == MatchType.EXACT
     assert score_empty == 1.0
 
-def test_evaluate_match_performance_benchmark():
-    import time
+def test_evaluate_match_negative_pairs_skip_title_similarity():
+    from unittest.mock import patch
+    import backend.ytm_service.matcher as matcher_mod
+
     pairs = [
         (("The Beatles", "Abbey Road", "Come Together", 259.0), ("Queen", "A Night at the Opera", "Bohemian Rhapsody", 354.0)),
         (("Led Zeppelin", "Led Zeppelin IV", "Stairway to Heaven", 482.0), ("Pink Floyd", "The Wall", "Comfortably Numb", 382.0)),
         (("Michael Jackson", "Thriller", "Billie Jean", 294.0), ("Prince", "Purple Rain", "Purple Rain", 520.0)),
         (("Radiohead", "OK Computer", "Karma Police", 261.0), ("Nirvana", "Nevermind", "Smells Like Teen Spirit", 301.0)),
-    ] * 250  # 1,000 evaluations
+    ]
 
-    t0 = time.perf_counter()
+    real_sim = matcher_mod.string_similarity
     for local_args, ytm_args in pairs:
-        evaluate_match(*local_args, *ytm_args)
-    duration_ms = (time.perf_counter() - t0) * 1000.0
-
-    # 1,000 negative match evaluations should complete well under 250ms with early length pruning and short-circuiting
-    assert duration_ms < 250.0, f"Expected 1,000 evaluations to finish < 250ms, took {duration_ms:.2f}ms"
+        with patch.object(matcher_mod, "string_similarity", side_effect=real_sim) as spy:
+            m_type, score = evaluate_match(*local_args, *ytm_args)
+        assert m_type == MatchType.NONE
+        assert score == 0.0
+        # At most the artist comparison runs; title similarity must be skipped
+        assert spy.call_count <= 1, f"{local_args[0]} vs {ytm_args[0]}: {spy.call_args_list}"
