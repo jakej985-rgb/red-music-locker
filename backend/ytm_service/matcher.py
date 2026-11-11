@@ -21,6 +21,8 @@ def string_similarity(a: str, b: str) -> float:
         return 1.0
     if not a or not b:
         return 0.0
+    if a == b:
+        return 1.0
     return difflib.SequenceMatcher(None, a, b).ratio()
 
 def evaluate_match(
@@ -64,8 +66,30 @@ def evaluate_match(
         return MatchType.STRONG, 0.85
 
     # 2. Fuzzy match test
-    art_sim = string_similarity(n_loc_art, n_ytm_art)
-    title_sim = string_similarity(n_loc_title, n_ytm_title)
+    # Performance Optimization (Bolt):
+    # Short-circuit artist similarity: if art_exact, similarity is 1.0.
+    # Otherwise, check length ratio upper bound (2*min/(len1+len2)) before calling SequenceMatcher.
+    # If artist similarity is < 0.6, fuzzy matching can never succeed (both fuzzy branches
+    # require art_sim >= 0.6), so early return MatchType.NONE and avoid computing title similarity.
+    if art_exact:
+        art_sim = 1.0
+    else:
+        len_loc = len(n_loc_art)
+        len_ytm = len(n_ytm_art)
+        if len_loc + len_ytm == 0:
+            art_sim = 1.0
+        elif (2.0 * min(len_loc, len_ytm)) / (len_loc + len_ytm) < 0.6:
+            art_sim = 0.0
+        else:
+            art_sim = string_similarity(n_loc_art, n_ytm_art)
+
+    if art_sim < 0.6:
+        return MatchType.NONE, 0.0
+
+    if title_exact:
+        title_sim = 1.0
+    else:
+        title_sim = string_similarity(n_loc_title, n_ytm_title)
     
     # Check containment (e.g. "Song (Live)" vs "Song")
     if (n_loc_title in n_ytm_title or n_ytm_title in n_loc_title) and (art_sim > 0.8 or art_exact):
