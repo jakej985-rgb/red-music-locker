@@ -99,3 +99,44 @@ def test_evaluate_match_no_match():
     )
     assert m_type == MatchType.NONE
     assert score < 0.5
+
+def test_evaluate_match_edge_cases_and_length_pruning():
+    # Length pruning where (2 * min) / sum < 0.6
+    m_type, score = evaluate_match(
+        local_artist="Extremely Long Artist Name For Testing Length Ratio Pruning",
+        local_album="Album",
+        local_title="Song Title",
+        local_duration=180.0,
+        ytm_artist="Short",
+        ytm_album="Album",
+        ytm_title="Song Title",
+        ytm_duration=180.0
+    )
+    assert m_type == MatchType.NONE
+    assert score == 0.0
+
+    # None / empty strings
+    m_type_none, score_none = evaluate_match(None, None, "Track", 200.0, None, None, "Track", 200.0)
+    assert m_type_none == MatchType.EXACT
+    assert score_none == 1.0
+
+    m_type_empty, score_empty = evaluate_match("", "", "Track", 200.0, "", "", "Track", 200.0)
+    assert m_type_empty == MatchType.EXACT
+    assert score_empty == 1.0
+
+def test_evaluate_match_performance_benchmark():
+    import time
+    pairs = [
+        (("The Beatles", "Abbey Road", "Come Together", 259.0), ("Queen", "A Night at the Opera", "Bohemian Rhapsody", 354.0)),
+        (("Led Zeppelin", "Led Zeppelin IV", "Stairway to Heaven", 482.0), ("Pink Floyd", "The Wall", "Comfortably Numb", 382.0)),
+        (("Michael Jackson", "Thriller", "Billie Jean", 294.0), ("Prince", "Purple Rain", "Purple Rain", 520.0)),
+        (("Radiohead", "OK Computer", "Karma Police", 261.0), ("Nirvana", "Nevermind", "Smells Like Teen Spirit", 301.0)),
+    ] * 250  # 1,000 evaluations
+
+    t0 = time.perf_counter()
+    for local_args, ytm_args in pairs:
+        evaluate_match(*local_args, *ytm_args)
+    duration_ms = (time.perf_counter() - t0) * 1000.0
+
+    # 1,000 negative match evaluations should complete well under 250ms with early length pruning and short-circuiting
+    assert duration_ms < 250.0, f"Expected 1,000 evaluations to finish < 250ms, took {duration_ms:.2f}ms"
